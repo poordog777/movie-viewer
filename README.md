@@ -33,7 +33,6 @@ Movie Viewer 是一個現代化的電影評論平台，整合第三方 TMDB API 
 - Google OAuth 2.0 整合
 
 ### 開發工具 (Development Tools)
-- ESLint + Prettier（程式碼規範）
 - Nodemon（開發熱重載）
 - Mocha（測試框架）
 

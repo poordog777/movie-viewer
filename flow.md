@@ -11,12 +11,11 @@
   ```
 - 安裝開發依賴：
   ```bash
-  npm install --save-dev nodemon @types/node typescript ts-node eslint prettier
+  npm install --save-dev nodemon @types/node typescript ts-node
   ```
 
 ## 2. 環境配置
 - 設置 TypeScript (tsconfig.json)
-- 配置 ESLint 和 Prettier
 - 設置 Swagger 文檔
 - 配置 Morgan 日誌系統
 - 設置 Helmet 安全性配置
