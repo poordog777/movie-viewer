@@ -4,15 +4,7 @@
 - 建立 GitHub Repository
 - 創建 .gitignore 文件
 - 初始化 npm 專案
-- 安裝核心依賴：
-  ```bash
-  npm install express typescript @types/express prisma @prisma/client mongoose
-  jsonwebtoken cors morgan swagger-ui-express helmet
-  ```
-- 安裝開發依賴：
-  ```bash
-  npm install --save-dev nodemon @types/node typescript ts-node
-  ```
+- 安裝核心依賴
 
 ## 2. 環境配置
 - 設置 TypeScript (tsconfig.json)
