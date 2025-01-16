@@ -1,17 +1,13 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import { setupSwagger } from './config/swagger';
+import { setupConfig } from './config';
 
 const app = express();
 
 app.use(cors());
-app.use(helmet());
-app.use(morgan('dev'));
 app.use(express.json());
 
-setupSwagger(app);
+setupConfig(app);
 
 const PORT = process.env.PORT || 3000;
 
