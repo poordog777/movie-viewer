@@ -8,19 +8,10 @@
 
 ## 2. 環境配置
 - 設置 TypeScript (tsconfig.json)
+- 設置 dotenv 環境變數
 - 設置 Swagger 文檔
 - 配置 Morgan 日誌系統
 - 設置 Helmet 安全性配置
-- 建立基本的專案結構：
-  ```
-  src/
-    ├── controllers/
-    ├── models/
-    ├── routes/
-    ├── middleware/
-    ├── config/
-    └── server.ts
-  ```
 
 ## 3. 資料庫設置
 - PostgreSQL 設置
