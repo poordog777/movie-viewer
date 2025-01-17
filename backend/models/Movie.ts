@@ -10,8 +10,10 @@ const movieSchema = new mongoose.Schema({
   backdropPath: { type: String },
   voteAverage: { type: Number },
   voteCount: { type: Number },
-  ratings: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Rating' }],
+  ratings: [{ type: Number, ref: 'Rating' }],
   comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }],
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
 export default mongoose.model('Movie', movieSchema);
