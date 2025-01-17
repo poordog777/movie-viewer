@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import { PrismaClient } from '@prisma/client';
 import { env } from './env';
-import { Pool } from 'pg';
 
 export const prisma = new PrismaClient();
 
