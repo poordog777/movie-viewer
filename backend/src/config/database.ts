@@ -4,40 +4,24 @@ import { env } from './env';
 
 export const prisma = new PrismaClient();
 
-const connectMongoDB = async (retries: number, maxRetries: number) => {
+const connectMongoDB = async (attempt: number, maxAttempts: number) => {
   try {
     await mongoose.connect(env.mongodbUri!);
     console.log('MongoDB 連接成功');
     return true;
   } catch (error) {
-    console.error(`MongoDB 連接失敗 (嘗試 ${retries}/${maxRetries}):`, error);
+    console.error(`MongoDB 連接失敗 (嘗試 ${attempt}/${maxAttempts}):`, error);
     return false;
   }
 };
 
-const connectPostgreSQL = async (retries: number, maxRetries: number) => {
+const connectPostgreSQL = async (attempt: number, maxAttempts: number) => {
   try {
-    // 執行測試查詢
     await prisma.$connect();
-    
-    // 執行測試查詢來確認連接和權限
-    try {
-      await prisma.$queryRaw`SELECT current_database() as db`;
-      console.log('PostgreSQL 連接成功');
-      return true;
-    } catch (queryError) {
-      throw new Error(`資料庫查詢失敗: ${queryError instanceof Error ? queryError.message : '未知錯誤'}`);
-    }
+    console.log('PostgreSQL 連接成功');
+    return true;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
-    console.error(`PostgreSQL 連接失敗 (嘗試 ${retries}/${maxRetries}): ${errorMessage}`);
-    
-    try {
-      await prisma.$disconnect();
-    } catch (disconnectError) {
-      console.error('PostgreSQL 斷開連接時發生錯誤:', disconnectError);
-    }
-    
+    console.error(`PostgreSQL 連接失敗 (嘗試 ${attempt}/${maxAttempts}):`, error);
     return false;
   }
 };

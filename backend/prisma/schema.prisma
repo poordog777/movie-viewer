@@ -24,11 +24,14 @@ model User {
 
 model Rating {
   id        Int      @id @default(autoincrement())
-  score     Int      @min(1) @max(10)
+  score     Int      
   movieId   Int
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
+
+  @@index([movieId])
 }
 
 model Favorite {

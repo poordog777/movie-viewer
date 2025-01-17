@@ -5,6 +5,8 @@ import { env } from './config/env';
 import { connectDatabases } from './config/database';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import routes from './routes';
+import mongoose from 'mongoose';
+import { prisma } from './config/database';
 
 const app = express();
 
@@ -36,5 +38,13 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+// 優雅關閉
+process.on('SIGTERM', async () => {
+  console.log('收到 SIGTERM 信號');
+  await mongoose.disconnect();
+  await prisma.$disconnect();
+  process.exit(0);
+});
 
 startServer();
