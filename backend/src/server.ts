@@ -3,6 +3,7 @@ import cors from 'cors';
 import { setupConfig } from './config';
 import { env } from './config/env';
 import { connectDatabases } from './config/database';
+import { errorHandler, notFound } from './middleware/error.middleware';
 
 const app = express();
 
@@ -10,6 +11,15 @@ app.use(cors());
 app.use(express.json());
 
 setupConfig(app);
+
+// 註冊路由（之後會加入）
+// app.use('/api/v1', routes);
+
+// 處理 404 錯誤
+app.use(notFound);
+
+// 全域錯誤處理
+app.use(errorHandler);
 
 const PORT = env.port;
 
