@@ -140,3 +140,6 @@ dist
 !/backend/.env.example
 /frontend/.env*
 !/frontend/.env.example
+
+# 開發文檔
+flow.md
