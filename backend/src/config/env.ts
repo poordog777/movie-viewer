@@ -5,7 +5,7 @@ dotenv.config();
 const requiredEnvVars = [
   'DATABASE_URL',
   'MONGODB_URI',
-  // 'JWT_SECRET',
+  'JWT_SECRET',
   // 'TMDB_API_KEY'
 ];
 

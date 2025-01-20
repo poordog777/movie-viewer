@@ -68,11 +68,16 @@ const swaggerDefinition = {
         }
       }
     },
-    securitySchemes: {
-      bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT'
+    responses: {
+      ServerError: {
+        description: '伺服器錯誤',
+        content: {
+          'application/json': {
+            schema: {
+              $ref: '#/components/schemas/Error'
+            }
+          }
+        }
       }
     }
   }
