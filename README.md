@@ -10,6 +10,7 @@ Movie Viewer 是一個現代化的電影評論平台，整合第三方 TMDB API 
 - dotenv（環境變數管理）
 - Helmet（安全性防護）
 - JWT + OAuth 2.0（身份驗證）
+- Joi（請求資料驗證）
 - Swagger（API 文檔）
 - Morgan（日誌系統）
 

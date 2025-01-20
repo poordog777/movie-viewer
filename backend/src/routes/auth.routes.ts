@@ -5,6 +5,8 @@ import { AppError, BusinessError, ErrorCodes } from '../types/error';
 import { generateToken } from '../utils/jwt.utils';
 import { catchAsync } from '../middleware/error.middleware';
 import bcrypt from 'bcrypt';
+import { validateRequest } from '../middleware/validator.middleware';
+import { loginSchema, registerSchema } from '../validators/auth.validator';
 
 const router = Router();
 
@@ -27,9 +29,13 @@ const router = Router();
  *               email:
  *                 type: string
  *                 format: email
+ *                 example: "user@example.com"
+ *                 description: 必須是有效的電子郵件格式
  *               password:
  *                 type: string
  *                 format: password
+ *                 example: "Password123"
+ *                 description: 密碼長度至少 8 個字元
  *     responses:
  *       200:
  *         description: 登入成功
@@ -68,7 +74,10 @@ const router = Router();
  *                   example: fail
  *                 message:
  *                   type: string
- *                   example: 請提供電子郵件和密碼
+ *                   example: 請求資料格式錯誤：電子郵件格式不正確
+ *                 errorCode:
+ *                   type: string
+ *                   example: INVALID_REQUEST_BODY
  *       401:
  *         description: 認證失敗
  *         content:
@@ -96,40 +105,39 @@ const router = Router();
  *                   type: string
  *                   example: 伺服器內部錯誤
  */
-router.post('/login', catchAsync(async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+router.post('/login', 
+  validateRequest(loginSchema),
+  catchAsync(async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+    
+    // 查找用戶
+    const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!email || !password) {
-    throw new BusinessError(
-      '請提供電子郵件和密碼',
-      ErrorCodes.AUTH_MISSING_FIELDS
+    // 驗證密碼
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      throw new BusinessError(
+        '電子郵件或密碼錯誤',
+        ErrorCodes.AUTH_INVALID_CREDENTIALS
+      );
+    }
+
+    // 生成令牌
+    const token = generateToken({
+      userId: user.id,
+      email: user.email
+    });
+
+    res.json(
+      createResponse('success', {
+        token,
+        user: {
+          id: user.id,
+          email: user.email
+        }
+      }, '登入成功')
     );
-  }
-
-  const user = await prisma.user.findUnique({ where: { email } });
-
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    throw new BusinessError(
-      '電子郵件或密碼錯誤',
-      ErrorCodes.AUTH_INVALID_CREDENTIALS
-    );
-  }
-
-  const token = generateToken({
-    userId: user.id,
-    email: user.email
-  });
-
-  res.json(
-    createResponse('success', {
-      token,
-      user: {
-        id: user.id,
-        email: user.email
-      }
-    }, '登入成功')
-  );
-}));
+  })
+);
 
 /**
  * @swagger
@@ -151,14 +159,17 @@ router.post('/login', catchAsync(async (req: Request, res: Response) => {
  *               name:
  *                 type: string
  *                 example: "Test User"
+ *                 description: 使用者名稱不能為空
  *               email:
  *                 type: string
  *                 format: email
  *                 example: "test@example.com"
+ *                 description: 必須是有效的電子郵件格式
  *               password:
  *                 type: string
  *                 format: password
- *                 example: "password123"
+ *                 example: "Password123"
+ *                 description: 密碼長度至少 8 個字元，必須包含大小寫字母和數字
  *     responses:
  *       201:
  *         description: 註冊成功
@@ -199,54 +210,57 @@ router.post('/login', catchAsync(async (req: Request, res: Response) => {
  *                   example: fail
  *                 message:
  *                   type: string
- *                   example: 此信箱已被註冊
+ *                   example: 請求資料格式錯誤：密碼需包含大小寫字母和數字
+ *                 errorCode:
+ *                   type: string
+ *                   example: INVALID_REQUEST_BODY
  */
-router.post('/register', catchAsync(async (req: Request, res: Response) => {
-  const { name, email, password } = req.body;
+router.post('/register',
+  validateRequest(registerSchema),
+  catchAsync(async (req: Request, res: Response) => {
+    const { name, email, password } = req.body;
 
-  if (!name || !email || !password) {
-    throw new BusinessError(
-      '請提供完整的註冊資訊',
-      ErrorCodes.AUTH_MISSING_FIELDS
-    );
-  }
+    // 檢查信箱是否已存在
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
 
-  const existingUser = await prisma.user.findUnique({
-    where: { email }
-  });
-
-  if (existingUser) {
-    throw new BusinessError(
-      '此信箱已被註冊',
-      ErrorCodes.AUTH_EMAIL_EXISTS
-    );
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword
+    if (existingUser) {
+      throw new BusinessError(
+        '此信箱已被註冊',
+        ErrorCodes.AUTH_EMAIL_EXISTS
+      );
     }
-  });
 
-  const token = generateToken({
-    userId: user.id,
-    email: user.email
-  });
+    // 加密密碼
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  res.status(201).json(
-    createResponse('success', {
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email
+    // 創建用戶
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword
       }
-    }, '註冊成功')
-  );
-}));
+    });
+
+    // 生成令牌
+    const token = generateToken({
+      userId: user.id,
+      email: user.email
+    });
+
+    res.status(201).json(
+      createResponse('success', {
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email
+        }
+      }, '註冊成功')
+    );
+  })
+);
 
 export default router; 
