@@ -79,13 +79,24 @@ const swaggerDefinition = {
           }
         }
       }
+    },
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: '請在 Headers 中加入 Bearer Token'
+      }
     }
   }
 };
 
 const options = {
   swaggerDefinition,
-  apis: ['./src/routes/*.ts', './src/routes/**/*.ts'] // 路由文件的路徑
+  apis: [
+    './src/routes/*.ts',
+    './src/docs/*.ts'  // 加入這行以載入所有文檔定義
+  ]
 };
 
 const swaggerSpec = swaggerJSDoc(options);

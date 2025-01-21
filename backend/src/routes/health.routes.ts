@@ -33,7 +33,7 @@ const router = Router();
  *                       type: string
  *                       example: "2024-01-01T00:00:00.000Z"
  */
-router.get('/health', (req, res) => {
+router.get('/', (req, res) => {
   res.json(
     createResponse('success', {
       uptime: process.uptime(),

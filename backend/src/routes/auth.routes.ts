@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { createResponse } from '../types/response';
-import { AppError, BusinessError, ErrorCodes } from '../types/error';
+import { BusinessError, ErrorCodes } from '../types/error';
 import { generateToken } from '../utils/jwt.utils';
 import { catchAsync } from '../middleware/error.middleware';
 import bcrypt from 'bcrypt';
