@@ -42,6 +42,9 @@ export enum ErrorCodes {
   AUTH_INVALID_TOKEN = 'AUTH_INVALID_TOKEN',          // 無效的認證令牌
   AUTH_INVALID_PASSWORD = 'AUTH_INVALID_PASSWORD',     // 密碼錯誤
   AUTH_TOKEN_EXPIRED = 'AUTH_TOKEN_EXPIRED',          // 認證令牌已過期
+  AUTH_TOKEN_REFRESH_FAILED = 'AUTH_TOKEN_REFRESH_FAILED', // 令牌刷新失敗
+  AUTH_SESSION_EXPIRED = 'AUTH_SESSION_EXPIRED',       // 使用者會話已過期
+  RATE_LIMIT_IP_EXCEEDED = 'RATE_LIMIT_IP_EXCEEDED',  // IP 位址請求次數超限
   
   // 使用者相關錯誤 (User Errors)
   USER_NOT_FOUND = 'USER_NOT_FOUND',                 // 找不到使用者
