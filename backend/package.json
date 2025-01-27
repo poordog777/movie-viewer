@@ -6,9 +6,9 @@
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "test": "NODE_ENV=test mocha -r ts-node/register 'src/tests/**/*.test.ts'",
-    "test:watch": "NODE_ENV=test mocha -r ts-node/register 'src/tests/**/*.test.ts' --watch",
-    "test:auth": "NODE_ENV=test mocha -r ts-node/register 'src/tests/auth/*.test.ts'"
+    "test": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/**/*.test.ts\"",
+    "test:watch": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/**/*.test.ts\" --watch",
+    "test:auth": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/auth/*.test.ts\""
   },
   "keywords": [],
   "author": "",
@@ -42,6 +42,7 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.7",
     "chai": "^4.3.10",
+    "cross-env": "^7.0.3",
     "mocha": "^11.0.1",
     "nodemon": "^3.1.9",
     "prisma": "^6.2.1",
