@@ -8,7 +8,8 @@
     "build": "tsc",
     "test": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/**/*.test.ts\"",
     "test:watch": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/**/*.test.ts\" --watch",
-    "test:auth": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/auth/*.test.ts\""
+    "test:auth": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/auth/*.test.ts\"",
+    "test:models": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/models/**/*.test.ts\""
   },
   "keywords": [],
   "author": "",
