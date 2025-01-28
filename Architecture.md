@@ -4,7 +4,7 @@
 
 ```mermaid
 graph TD
-    Client[前端 React App] -->|API 請求| BFF[Backend for Frontend]
+    Client[前端] -->|API 請求| BFF[後端]
     BFF -->|認證/授權| Auth[認證服務]
     BFF -->|電影資訊| TMDB[TMDB API]
     BFF -->|使用者數據| PostgreSQL[(PostgreSQL)]
@@ -59,22 +59,25 @@ sequenceDiagram
 
 ## 資料庫設計
 
-### PostgreSQL 架構
+### PostgreSQL 核心結構
 
 ```sql
--- 用戶表
+-- 用戶表 (核心欄位)
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
     google_id VARCHAR(255) UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
 -- 收藏表
 CREATE TABLE favorites (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     movie_id INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, movie_id)
@@ -83,13 +86,35 @@ CREATE TABLE favorites (
 -- 評分表
 CREATE TABLE ratings (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     movie_id INTEGER NOT NULL,
     score INTEGER CHECK (score >= 1 AND score <= 5),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, movie_id)
 );
 ```
+
+### 說明
+
+1. User 表核心欄位：
+   - id: 用戶唯一標識
+   - email: 唯一電子郵件（加入格式驗證）
+   - name: 用戶名稱
+   - password: 密碼
+   - google_id: Google 登入 ID（可選）
+   - created_at/updated_at: 時間戳記
+
+2. Rating 表：
+   - score: 1-5 分評分限制
+   - movie_id: 電影 ID
+   - 用戶關聯: ON DELETE CASCADE
+   - 唯一約束: 每部電影每個用戶只能評分一次
+
+3. Favorite 表：
+   - movie_id: 電影 ID
+   - 用戶關聯: ON DELETE CASCADE
+   - 唯一約束: 防止重複收藏
 
 ### MongoDB 文件結構
 
@@ -105,46 +130,25 @@ CREATE TABLE ratings (
   cached_at: Date,
   expire_at: Date
 }
-
-// 評論
-{
-  _id: ObjectId,
-  user_id: Number,
-  movie_id: Number,
-  content: String,
-  created_at: Date,
-  updated_at: Date
-}
 ```
 
-## 技術選擇說明
+## 核心技術選擇說明
 
-1. 前端技術
-   - React.js：組件化開發，豐富的生態系統
-   - TypeScript：型別安全，更好的開發體驗
-   - Material UI：快速構建一致的 UI 介面
+1. 後端技術
+   - Express.js: 輕量級框架
+   - TypeScript: 型別安全
+   - Prisma: 強型別 ORM
+   - Mongoose: MongoDB ODM
 
-2. 後端技術
-   - Express.js：輕量級、靈活的 Node.js 框架
-   - TypeScript：共用前端的型別定義
-   - Prisma：類型安全的 ORM，自動生成類型
-   - Mongoose：靈活的 MongoDB ODM
+2. 資料庫選擇
+   - PostgreSQL: 用戶資料、評分和收藏（需要關聯和一致性）
+   - MongoDB: 電影資訊快取（適合文件結構）
 
-3. 資料庫選擇
-   - PostgreSQL：
-     - 用戶數據：強一致性需求
-     - 收藏/評分：需要關聯查詢
-   - MongoDB：
-     - 電影快取：文件結構適合存儲 TMDB 數據
-     - 評論數據：靈活的 schema
+3. 安全性考慮
+   - JWT + OAuth: 身份驗證
+   - 密碼加密存儲
+   - 資料驗證
 
-4. 安全性考慮
-   - JWT + OAuth：安全的身份驗證
-   - Helmet：HTTP 安全標頭
-   - Rate Limiting：防止濫用
-   - 資料驗證：使用 Joi 驗證所有輸入
-
-5. 效能優化
-   - MongoDB 快取：減少 TMDB API 調用
-   - 資料庫索引：優化查詢性能
-   - API 響應壓縮：減少傳輸大小
+4. 效能優化
+   - MongoDB 快取機制
+   - 資料庫索引優化

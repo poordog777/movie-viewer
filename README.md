@@ -105,13 +105,13 @@ movie-viewer/
 │   ├── model/             # MongoDB
 │   ├── prisma/            # PostgreSQL
 │   ├── src/              
-│   │   ├── config/       # 配置檔案
-│   │   ├── controllers/  # 控制器
-│   │   ├── middleware/   # 中間件
-│   │   ├── routes/      # 路由定義
-│   │   └── services/    # 業務邏輯
-│   └── tests/            # 測試檔案
-└── frontend/             # 前端程式碼
+│   │   ├── config/        # 配置檔案
+│   │   ├── controllers/   # 控制器
+│   │   ├── middleware/    # 中間件
+│   │   ├── routes/        # 路由定義
+│   │   └── services/      # 業務邏輯
+│   └── tests/             # 測試檔案
+└── frontend/              # 前端程式碼
 ```
 
 ## 測試
