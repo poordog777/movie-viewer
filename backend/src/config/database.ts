@@ -4,7 +4,7 @@ import { env } from './env';
 
 export const prisma = new PrismaClient();
 
-const connectMongoDB = async (attempt: number, maxAttempts: number) => {
+export const connectMongoDB = async (attempt: number, maxAttempts: number) => {
   try {
     await mongoose.connect(env.mongodbUri!);
     console.log('MongoDB 連接成功');
@@ -72,4 +72,4 @@ export const connectDatabases = async () => {
 process.on('beforeExit', async () => {
   await prisma.$disconnect();
   await mongoose.disconnect();
-}); 
+});
