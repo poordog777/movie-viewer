@@ -73,7 +73,7 @@ describe('JWT 身份驗證測試', () => {
       }
     });
 
-    it('應該能檢查 token 是否即將過期', async function() {
+    it('應該能檢查 token 是否即將過期', async function(this: Mocha.Context) {
       this.timeout(5000); // 設置更長的超時時間
       const shortLivedToken = jwt.sign(mockUser, process.env.JWT_SECRET as string, { expiresIn: '3s' });
       
