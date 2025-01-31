@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError, ErrorCodes } from '../types/error';
 import { verifyToken } from '../utils/jwt.utils';
-import { prisma } from '../config/database';
+import { prisma } from '../config/database/postgresql';
 
 declare global {
   namespace Express {

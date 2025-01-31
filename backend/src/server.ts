@@ -2,11 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import { setupConfig } from './config';
 import { env } from './config/env';
-import { connectDatabases } from './config/database';
+import { connectDatabases, disconnectDatabases } from './config/database/connection';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import routes from './routes';
-import mongoose from 'mongoose';
-import { prisma } from './config/database';
 
 const app = express();
 
@@ -28,23 +26,47 @@ const PORT = env.port;
 
 const startServer = async () => {
   try {
-    await connectDatabases();
+    console.log('正在啟動伺服器...');
     
-    app.listen(PORT, () => {
+    // 連接資料庫
+    console.log('正在連接資料庫...');
+    await connectDatabases();
+    console.log('資料庫連接成功');
+    
+    // 啟動 HTTP 伺服器
+    const server = app.listen(PORT, () => {
       console.log(`伺服器運行於 port ${PORT}`);
+      console.log('API 文檔可於 http://localhost:'+PORT+'/api-docs 查看');
     });
+
+    // 設定 HTTP 伺服器錯誤處理
+    server.on('error', (error: Error) => {
+      console.error('HTTP 伺服器錯誤:', error);
+      process.exit(1);
+    });
+
   } catch (error) {
     console.error('伺服器啟動失敗:', error);
     process.exit(1);
   }
 };
 
-// 優雅關閉
-process.on('SIGTERM', async () => {
-  console.log('收到 SIGTERM 信號');
-  await mongoose.disconnect();
-  await prisma.$disconnect();
-  process.exit(0);
-});
+// 優雅關閉處理函數
+const gracefulShutdown = async (signal: string) => {
+  console.log(`收到 ${signal} 信號`);
+  try {
+    await disconnectDatabases();
+    console.log('成功關閉所有數據庫連接');
+    process.exit(0);
+  } catch (error) {
+    console.error('關閉過程發生錯誤:', error);
+    process.exit(1);
+  }
+};
+
+// 註冊信號處理器
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGHUP', () => gracefulShutdown('SIGHUP'));
 
 startServer();
