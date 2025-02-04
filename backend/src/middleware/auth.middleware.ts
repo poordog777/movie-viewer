@@ -2,14 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError, ErrorCodes } from '../types/error';
 import { verifyToken } from '../utils/jwt.utils';
 import { prisma } from '../config/database/postgresql';
+import type { User } from '@prisma/client';
 
+// 定義請求中的用戶型別
 declare global {
   namespace Express {
     interface Request {
-      user?: {
-        id: number;
-        email: string;
-      };
+      user?: User;  // 使用 Prisma 的 User 型別
     }
   }
 }
@@ -28,19 +27,23 @@ export const authenticate = async (
     const token = authHeader.split(' ')[1];
     const decoded = verifyToken(token);
 
-    // 確認用戶存在
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, email: true }
+      select: { 
+        id: true, 
+        email: true,
+        name: true,
+        googleId: true 
+      }
     });
 
     if (!user) {
       throw new AppError(401, '用戶不存在', ErrorCodes.AUTH_INVALID_CREDENTIALS);
     }
 
-    req.user = user;
+    req.user = user as User;  // 明確的型別轉換
     next();
   } catch (error) {
     next(error);
   }
-}; 
+};

@@ -1,12 +1,24 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/database/postgresql';
 import { createResponse } from '../types/response';
 import { BusinessError, ErrorCodes } from '../types/error';
-import { generateToken } from '../utils/jwt.utils';
 import { catchAsync } from '../middleware/error.middleware';
-import bcrypt from 'bcrypt';
 import { validateRequest } from '../middleware/validator.middleware';
 import { loginSchema, registerSchema } from '../validators/auth.validator';
+import passport from 'passport';
+import { StateManager } from '../config/oauth';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { env } from '../config/env';
+import { User } from '@prisma/client';
+
+interface AuthError extends Error {
+  status?: number;
+}
+
+interface AuthInfo {
+  message: string;
+}
 
 const router = Router();
 
@@ -15,128 +27,41 @@ const router = Router();
  * /auth/login:
  *   post:
  *     summary: 用戶登入
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: "user@example.com"
- *                 description: 必須是有效的電子郵件格式
- *               password:
- *                 type: string
- *                 format: password
- *                 example: "Password123"
- *                 description: 密碼長度至少 8 個字元
- *     responses:
- *       200:
- *         description: 登入成功
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: success
- *                 message:
- *                   type: string
- *                   example: 登入成功
- *                 data:
- *                   type: object
- *                   properties:
- *                     token:
- *                       type: string
- *                     user:
- *                       type: object
- *                       properties:
- *                         id:
- *                           type: number
- *                         email:
- *                           type: string
- *       400:
- *         description: 請求錯誤
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: fail
- *                 message:
- *                   type: string
- *                   example: 請求資料格式錯誤：電子郵件格式不正確
- *                 errorCode:
- *                   type: string
- *                   example: INVALID_REQUEST_BODY
- *       401:
- *         description: 認證失敗
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: fail
- *                 message:
- *                   type: string
- *                   example: 電子郵件或密碼錯誤
- *       500:
- *         description: 伺服器錯誤
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: error
- *                 message:
- *                   type: string
- *                   example: 伺服器內部錯誤
  */
 router.post('/login', 
   validateRequest(loginSchema),
-  catchAsync(async (req: Request, res: Response) => {
-    const { email, password } = req.body;
-    
-    // 查找用戶
-    const user = await prisma.user.findUnique({ where: { email } });
+  (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate('local', { session: false }, (err: AuthError | null, user: User | false, info: AuthInfo | undefined) => {
+      if (err) {
+        return next(err);
+      }
 
-    // 驗證密碼
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new BusinessError(
-        '電子郵件或密碼錯誤',
-        ErrorCodes.AUTH_INVALID_CREDENTIALS
+      if (!user) {
+        throw new BusinessError(
+          info?.message || '登入失敗',
+          ErrorCodes.AUTH_INVALID_CREDENTIALS
+        );
+      }
+
+      // 生成 JWT
+      const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        env.jwtSecret || 'your-secret-key',
+        { expiresIn: '24h' }
       );
-    }
 
-    // 生成令牌
-    const token = generateToken({
-      userId: user.id,
-      email: user.email
-    });
-
-    res.json(
-      createResponse('success', {
-        token,
-        user: {
-          id: user.id,
-          email: user.email
-        }
-      }, '登入成功')
-    );
-  })
+      res.json(
+        createResponse('success', {
+          token,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name
+          }
+        }, '登入成功')
+      );
+    })(req, res, next);
+  }
 );
 
 /**
@@ -144,76 +69,6 @@ router.post('/login',
  * /auth/register:
  *   post:
  *     summary: 用戶註冊
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - email
- *               - password
- *             properties:
- *               name:
- *                 type: string
- *                 example: "Test User"
- *                 description: 使用者名稱不能為空
- *               email:
- *                 type: string
- *                 format: email
- *                 example: "test@example.com"
- *                 description: 必須是有效的電子郵件格式
- *               password:
- *                 type: string
- *                 format: password
- *                 example: "Password123"
- *                 description: 密碼長度至少 8 個字元，必須包含大小寫字母和數字
- *     responses:
- *       201:
- *         description: 註冊成功
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: success
- *                 message:
- *                   type: string
- *                   example: 註冊成功
- *                 data:
- *                   type: object
- *                   properties:
- *                     token:
- *                       type: string
- *                     user:
- *                       type: object
- *                       properties:
- *                         id:
- *                           type: number
- *                         name:
- *                           type: string
- *                         email:
- *                           type: string
- *       400:
- *         description: 請求錯誤
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: fail
- *                 message:
- *                   type: string
- *                   example: 請求資料格式錯誤：密碼需包含大小寫字母和數字
- *                 errorCode:
- *                   type: string
- *                   example: INVALID_REQUEST_BODY
  */
 router.post('/register',
   validateRequest(registerSchema),
@@ -244,11 +99,12 @@ router.post('/register',
       }
     });
 
-    // 生成令牌
-    const token = generateToken({
-      userId: user.id,
-      email: user.email
-    });
+    // 生成 JWT
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      env.jwtSecret || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
 
     res.status(201).json(
       createResponse('success', {
@@ -263,4 +119,58 @@ router.post('/register',
   })
 );
 
-export default router; 
+// Google OAuth 登入
+router.get('/google', (req: Request, res: Response) => {
+  const state = StateManager.generateState();
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    state
+  })(req, res);
+});
+
+// Google OAuth 回調處理
+router.get('/google/callback',
+  (req: Request, res: Response, next: NextFunction) => {
+    const { state } = req.query;
+    
+    if (!state || !StateManager.verifyState(state as string)) {
+      throw new BusinessError(
+        '無效的狀態參數',
+        ErrorCodes.AUTH_GOOGLE_STATE_INVALID
+      );
+    }
+    
+    passport.authenticate('google', { session: false }, (err: AuthError | null, user: User | false) => {
+      if (err) {
+        return next(err);
+      }
+      
+      if (!user) {
+        throw new BusinessError(
+          'Google 登入失敗',
+          ErrorCodes.AUTH_GOOGLE_ERROR
+        );
+      }
+
+      // 生成 JWT
+      const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        env.jwtSecret || 'your-secret-key',
+        { expiresIn: '24h' }
+      );
+
+      res.json(
+        createResponse('success', {
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email
+          }
+        }, 'Google 登入成功')
+      );
+    })(req, res, next);
+  }
+);
+
+export default router;

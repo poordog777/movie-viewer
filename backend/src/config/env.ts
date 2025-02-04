@@ -6,6 +6,8 @@ const requiredEnvVars = [
   'DATABASE_URL',
   'MONGODB_URI',
   'JWT_SECRET',
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
   // 'TMDB_API_KEY'
 ];
 
@@ -21,5 +23,8 @@ export const env = {
   databaseUrl: process.env.DATABASE_URL,
   mongodbUri: process.env.MONGODB_URI,
   jwtSecret: process.env.JWT_SECRET,
-  tmdbApiKey: process.env.TMDB_API_KEY
-}; 
+  tmdbApiKey: process.env.TMDB_API_KEY,
+  googleClientId: process.env.GOOGLE_CLIENT_ID,
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  apiUrl: process.env.API_URL || `http://localhost:${process.env.PORT || 3000}/api`
+};

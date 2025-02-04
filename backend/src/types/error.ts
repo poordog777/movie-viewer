@@ -44,7 +44,10 @@ export enum ErrorCodes {
   AUTH_TOKEN_EXPIRED = 'AUTH_TOKEN_EXPIRED',          // 認證令牌已過期
   AUTH_TOKEN_REFRESH_FAILED = 'AUTH_TOKEN_REFRESH_FAILED', // 令牌刷新失敗
   AUTH_SESSION_EXPIRED = 'AUTH_SESSION_EXPIRED',       // 使用者會話已過期
-  RATE_LIMIT_IP_EXCEEDED = 'RATE_LIMIT_IP_EXCEEDED',  // IP 位址請求次數超限
+  AUTH_GOOGLE_ERROR = 'AUTH_GOOGLE_ERROR',            // Google 登入處理失敗
+  AUTH_GOOGLE_STATE_INVALID = 'AUTH_GOOGLE_STATE_INVALID', // Google OAuth state 無效
+  AUTH_GOOGLE_USER_EXISTS = 'AUTH_GOOGLE_USER_EXISTS', // Google 帳號已被其他用戶使用
+  AUTH_GOOGLE_EMAIL_MISMATCH = 'AUTH_GOOGLE_EMAIL_MISMATCH', // Google 帳號信箱不匹配
   
   // 使用者相關錯誤 (User Errors)
   USER_NOT_FOUND = 'USER_NOT_FOUND',                 // 找不到使用者
@@ -80,4 +83,4 @@ export interface ErrorResponse {
   message: string;
   errorCode: string;
   stack?: string;
-} 
+}
