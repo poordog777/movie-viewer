@@ -28,31 +28,4 @@ export const connectPostgreSQL = async (currentRetry = 1, maxRetries = 3): Promi
   }
 };
 
-/**
- * 斷開 PostgreSQL 數據庫連接
- */
-export const disconnectPostgreSQL = async (): Promise<void> => {
-  try {
-    await prisma.$disconnect();
-    console.log('PostgreSQL: 已斷開連接');
-  } catch (error) {
-    const dbError = handlePrismaError(error);
-    throw new Error(`PostgreSQL: 斷開連接失敗 - ${dbError.message}`);
-  }
-};
-
-/**
- * 檢查 PostgreSQL 數據庫連接狀態
- * @returns 連接是否正常
- */
-export const checkPostgreSQLConnection = async (): Promise<boolean> => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    return true;
-  } catch (error) {
-    return false;
-  }
-};
-
-// 導出 prisma 實例以供其他模組使用
-export const prismaClient = prisma;
+export { prisma };

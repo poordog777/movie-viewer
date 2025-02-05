@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError, ErrorResponse, ErrorCodes } from '../types/error';
-import { env } from '../config/env';
 
 export const errorHandler = (
   err: Error | AppError,
@@ -25,15 +24,14 @@ export const errorHandler = (
     };
   }
 
-  // 在開發環境下顯示錯誤堆疊
-  if (env.nodeEnv === 'development') {
-    errorResponse.stack = err.stack;
-    console.error('錯誤詳情:', {
-      statusCode,
-      ...errorResponse,
-      stack: err.stack
-    });
-  }
+  // 開發環境下提供更多錯誤訊息
+  errorResponse.stack = err.stack;
+  console.error('錯誤詳情:', {
+    statusCode,
+    ...errorResponse,
+    stack: err.stack
+  });
+  
 
   res.status(statusCode).json(errorResponse);
 };
