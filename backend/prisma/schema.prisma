@@ -18,8 +18,6 @@ model User {
   ratings   Rating[]
   favorites Favorite[]
 
-  @@index([email])
-  @@index([googleId])
   @@map("users")
 }
 model Rating {

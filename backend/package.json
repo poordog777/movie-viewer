@@ -11,7 +11,8 @@
     "test:auth": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/auth/*.test.ts\"",
     "test:models": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/models/**/*.test.ts\"",
     "test:database": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/database/**/*.test.ts\"",
-    "test:security": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/security/**/*.test.ts\""
+    "test:security": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/security/**/*.test.ts\"",
+    "test:movies": "cross-env NODE_ENV=test mocha -r ts-node/register \"src/tests/movies/**/*.test.ts\""
   },
   "keywords": [],
   "author": "",
@@ -21,6 +22,7 @@
     "@prisma/client": "^6.2.1",
     "@types/express": "^5.0.0",
     "@types/joi": "^17.2.3",
+    "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
