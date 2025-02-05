@@ -1,80 +1,91 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-
-import { connectDatabases, disconnectDatabases, checkConnections } from '../../config/database/connection';
+import { PrismaClient } from '@prisma/client';
+import { initializeDatabases, closeDatabases, checkDatabaseConnections } from '../../config/database/connection';
 import * as postgresql from '../../config/database/postgresql';
 
-describe('數據庫連接測試', () => {
-  // 在每個測試後重置所有 stub
+describe('Database Connection Tests', () => {
+  let prismaConnectStub: sinon.SinonStub;
+  let prismaDisconnectStub: sinon.SinonStub;
+  
+  beforeEach(() => {
+    // 重置所有 stub
+    sinon.restore();
+    
+    // 創建新的 stub
+    prismaConnectStub = sinon.stub(postgresql, 'connectPostgreSQL');
+    prismaDisconnectStub = sinon.stub(postgresql, 'disconnectPostgreSQL');
+  });
+  
   afterEach(() => {
     sinon.restore();
   });
-
-  describe('connectDatabases()', () => {
-    it('應該成功連接數據庫', async () => {
-      // 模擬成功的數據庫連接
-      const postgresStub = sinon.stub(postgresql, 'connectPostgreSQL').resolves(true);
-
-      await connectDatabases();
-
-      expect(postgresStub.calledOnce).to.be.true;
+  
+  describe('initializeDatabases', () => {
+    it('應該成功初始化所有數據庫連接', async () => {
+      prismaConnectStub.resolves(true);
+      
+      await initializeDatabases();
+      expect(prismaConnectStub.calledOnce).to.be.true;
     });
-
+    
     it('當 PostgreSQL 連接失敗時應該拋出錯誤', async () => {
-      // 模擬 PostgreSQL 連接失敗
-      sinon.stub(postgresql, 'connectPostgreSQL').resolves(false);
-
+      prismaConnectStub.resolves(false);
+      
       try {
-        await connectDatabases();
+        await initializeDatabases();
         expect.fail('應該拋出錯誤');
-      } catch (error) {
+      } catch (err) {
+        const error = err as Error;
         expect(error).to.be.instanceOf(Error);
-        expect((error as Error).message).to.include('PostgreSQL: 連接失敗');
+        expect(error.message).to.equal('無法建立 PostgreSQL 連接');
       }
     });
   });
-
-  describe('disconnectDatabases()', () => {
-    it('應該成功斷開數據庫連接', async () => {
-      // 模擬成功的數據庫斷開連接
-      const postgresStub = sinon.stub(postgresql, 'disconnectPostgreSQL').resolves();
-
-      await disconnectDatabases();
-
-      expect(postgresStub.calledOnce).to.be.true;
+  
+  describe('closeDatabases', () => {
+    it('應該正確關閉所有數據庫連接', async () => {
+      prismaDisconnectStub.resolves();
+      
+      await closeDatabases();
+      expect(prismaDisconnectStub.calledOnce).to.be.true;
     });
-
-    it('當 PostgreSQL 斷開連接失敗時應該繼續執行', async () => {
-      // 模擬 PostgreSQL 斷開連接失敗
-      const postgresStub = sinon.stub(postgresql, 'disconnectPostgreSQL').rejects(new Error('PostgreSQL斷開連接錯誤'));
-
-      await disconnectDatabases();
-
-      expect(postgresStub.calledOnce).to.be.true;
+    
+    it('當關閉連接失敗時應該拋出錯誤', async () => {
+      const expectedError = new Error('關閉連接失敗');
+      prismaDisconnectStub.rejects(expectedError);
+      
+      try {
+        await closeDatabases();
+        expect.fail('應該拋出錯誤');
+      } catch (err) {
+        const error = err as Error;
+        expect(error).to.equal(expectedError);
+      }
     });
   });
-
-  describe('checkConnections()', () => {
-    it('應該正確回報數據庫的連接狀態', async () => {
-      // 模擬數據庫連接成功
-      sinon.stub(postgresql, 'checkPostgreSQLConnection').resolves(true);
-
-      const status = await checkConnections();
-
-      expect(status).to.deep.equal({
+  
+  describe('checkDatabaseConnections', () => {
+    it('應該返回所有數據庫的連接狀態', async () => {
+      const checkStub = sinon.stub(postgresql, 'checkPostgreSQLConnection').resolves(true);
+      
+      const result = await checkDatabaseConnections();
+      
+      expect(result).to.deep.equal({
         postgresql: true
       });
+      expect(checkStub.calledOnce).to.be.true;
     });
-
-    it('當檢查過程發生異常錯誤時應該將狀態設為 false', async () => {
-      // 模擬 PostgreSQL 檢查拋出錯誤
-      sinon.stub(postgresql, 'checkPostgreSQLConnection').rejects(new Error('檢查失敗'));
-
-      const status = await checkConnections();
-
-      expect(status).to.deep.equal({
+    
+    it('當數據庫連接失敗時應該返回 false', async () => {
+      const checkStub = sinon.stub(postgresql, 'checkPostgreSQLConnection').resolves(false);
+      
+      const result = await checkDatabaseConnections();
+      
+      expect(result).to.deep.equal({
         postgresql: false
       });
+      expect(checkStub.calledOnce).to.be.true;
     });
   });
 });

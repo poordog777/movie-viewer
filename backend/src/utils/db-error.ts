@@ -1,43 +1,76 @@
-import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError, PrismaClientValidationError } from '@prisma/client/runtime/library';
 
-export class DatabaseError extends Error {
-  constructor(
-    message: string,
-    public originalError?: any,
-    public errorCode?: string
-  ) {
-    super(message);
-    this.name = 'DatabaseError';
-  }
+export interface DatabaseError {
+  code: string;
+  message: string;
+  type: 'validation' | 'constraint' | 'connection' | 'unknown';
 }
 
-export const handlePrismaError = (error: any): DatabaseError => {
-  // 處理連接相關錯誤
-  if (error instanceof Prisma.PrismaClientInitializationError) {
-    return new DatabaseError('資料庫連接初始化失敗', error, 'INIT_ERROR');
-  }
-  if (error instanceof Prisma.PrismaClientRustPanicError) {
-    return new DatabaseError('資料庫連接意外中斷', error, 'CONNECTION_PANIC');
-  }
-
-  // 處理操作相關錯誤
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+/**
+ * 處理 Prisma 資料庫錯誤
+ * @param error 原始錯誤物件
+ * @returns 格式化後的資料庫錯誤
+ */
+export function handlePrismaError(error: unknown): DatabaseError {
+  // Prisma 已知請求錯誤
+  if (error instanceof PrismaClientKnownRequestError) {
     switch (error.code) {
       case 'P2002':
-        return new DatabaseError('唯一性約束衝突', error, 'UNIQUE_CONSTRAINT');
-      case 'P2025':
-        return new DatabaseError('找不到記錄', error, 'NOT_FOUND');
-      case 'P2014':
-        return new DatabaseError('關聯約束違反', error, 'RELATION_VIOLATION');
+        return {
+          code: 'UNIQUE_CONSTRAINT',
+          message: '資料已存在，違反唯一性約束',
+          type: 'constraint'
+        };
       case 'P2003':
-        return new DatabaseError('外鍵約束違反', error, 'FOREIGN_KEY_VIOLATION');
+        return {
+          code: 'FOREIGN_KEY_CONSTRAINT',
+          message: '外鍵約束違反',
+          type: 'constraint'
+        };
+      case 'P2025':
+        return {
+          code: 'NOT_FOUND',
+          message: '找不到要操作的記錄',
+          type: 'validation'
+        };
       default:
-        return new DatabaseError('資料庫操作錯誤', error, 'UNKNOWN');
+        return {
+          code: error.code,
+          message: error.message,
+          type: 'unknown'
+        };
     }
   }
-  if (error instanceof Prisma.PrismaClientValidationError) {
-    return new DatabaseError('資料驗證錯誤', error, 'VALIDATION');
+  
+  // Prisma 驗證錯誤
+  if (error instanceof PrismaClientValidationError) {
+    return {
+      code: 'VALIDATION_ERROR',
+      message: error.message,
+      type: 'validation'
+    };
   }
-  return new DatabaseError('未預期的錯誤', error, 'UNEXPECTED');
-};
 
+  // 一般錯誤
+  if (error instanceof Error) {
+    if (error.message.includes('connection')) {
+      return {
+        code: 'CONNECTION_ERROR',
+        message: error.message,
+        type: 'connection'
+      };
+    }
+    return {
+      code: 'UNKNOWN_ERROR',
+      message: error.message,
+      type: 'unknown'
+    };
+  }
+
+  // 未知錯誤
+  return {
+    code: 'UNKNOWN_ERROR',
+    message: '未知的資料庫錯誤',
+    type: 'unknown'
+  };
+}
