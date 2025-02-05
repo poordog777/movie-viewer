@@ -4,11 +4,15 @@ Movie Viewer 是一個現代化的電影評論平台，整合第三方 TMDB API 
 
 ## 功能特點
 - 整合 TMDB API 即時電影資訊
-- Google OAuth 2.0 一鍵登入
+- 多種登入方式（一般登入 + Google OAuth 2.0）
+- 電影評分與評論系統
 - 個人化電影收藏清單
-- 即時評論與評分系統
-- 電影資訊本地快取機制
-
+- 多樣化電影瀏覽模式
+  * 近期熱門電影
+  * 現正上映電影
+  * 即將上映電影
+  * 歷史上的今日
+  * 評分排名
 
 ## 使用技術 (Tech Stack)
 
@@ -23,28 +27,28 @@ Movie Viewer 是一個現代化的電影評論平台，整合第三方 TMDB API 
 - Morgan（日誌系統）
 
 ### 資料庫 (Database)
-#### PostgreSQL（關聯式資料庫）
-- 用戶資料管理
-- 評分記錄
-- 收藏清單
-
-#### MongoDB（文件資料庫）
-- 電影資訊快取
-- 評論資料儲存
+- PostgreSQL（關聯式資料庫）
+  * 用戶資料管理
+  * 電影資訊快取
+  * 評分與評論
+  * 收藏清單
 
 ### 資料庫工具
 - Prisma（ORM for PostgreSQL）
-- Mongoose（ODM for MongoDB）
 
 ### 前端技術 (Frontend)
 - React.js
 - TypeScript
+- Material UI
 - TMDB API 整合
 - Google OAuth 2.0 整合
 
 ### 開發工具 (Development Tools)
 - Nodemon（開發熱重載）
 - Mocha（測試框架）
+  * Chai（斷言庫）
+  * Supertest（HTTP 測試）
+  * Sinon（測試替身：mock、stub、spy）
 
 ### 部署環境 (Deployment)
 - GitHub Actions（CI/CD）
@@ -56,7 +60,6 @@ Movie Viewer 是一個現代化的電影評論平台，整合第三方 TMDB API 
 ### 環境要求
 - Node.js >= 16
 - PostgreSQL
-- MongoDB
 
 ### 安裝步驟
 1. 克隆專案
@@ -80,7 +83,6 @@ npm install
 - 複製 `.env.example` 到 `.env`
 - 設定必要的環境變數：
   - DATABASE_URL
-  - MONGODB_URI
   - JWT_SECRET
   - TMDB_API_KEY
   - GOOGLE_CLIENT_ID
@@ -101,17 +103,16 @@ http://localhost:3000/api-docs
 ## 專案結構
 ```bash
 movie-viewer/
-├── backend/               # 後端程式碼
-│   ├── model/             # MongoDB
-│   ├── prisma/            # PostgreSQL
+├── backend/              # 後端程式碼
+│   ├── prisma/           # 資料庫 Schema
 │   ├── src/              
-│   │   ├── config/        # 配置檔案
-│   │   ├── controllers/   # 控制器
-│   │   ├── middleware/    # 中間件
-│   │   ├── routes/        # 路由定義
-│   │   └── services/      # 業務邏輯
-│   └── tests/             # 測試檔案
-└── frontend/              # 前端程式碼
+│   │   ├── config/       # 配置檔案
+│   │   ├── controllers/  # 控制器
+│   │   ├── middleware/   # 中間件
+│   │   ├── routes/       # 路由定義
+│   │   └── services/     # 業務邏輯
+│   └── tests/            # 測試檔案
+└── frontend/             # 前端程式碼
 ```
 
 ## 測試
@@ -121,4 +122,3 @@ npm test
 
 # 運行特定測試
 npm run test:auth    # 認證相關測試
-```
