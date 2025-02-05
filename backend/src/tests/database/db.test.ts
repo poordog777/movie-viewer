@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { initializeDatabases } from '../../config/database/connection';
+import { initializeDatabase } from '../../config/database/db';
 import * as postgresql from '../../config/database/postgresql';
 
 describe('Database Connection Tests', () => {
@@ -18,11 +18,11 @@ describe('Database Connection Tests', () => {
     sinon.restore();
   });
   
-  describe('initializeDatabases', () => {
-    it('應該成功初始化數據庫連接', async () => {
+  describe('initializeDatabase', () => {
+    it('應該成功初始化 PostgreSQL 連接', async () => {
       prismaConnectStub.resolves(true);
       
-      await initializeDatabases();
+      await initializeDatabase();
       expect(prismaConnectStub.calledOnce).to.be.true;
     });
     
@@ -30,12 +30,12 @@ describe('Database Connection Tests', () => {
       prismaConnectStub.resolves(false);
       
       try {
-        await initializeDatabases();
+        await initializeDatabase();
         expect.fail('應該拋出錯誤');
       } catch (err) {
         const error = err as Error;
         expect(error).to.be.instanceOf(Error);
-        expect(error.message).to.equal('無法建立 PostgreSQL 連接');
+        expect(error.message).to.equal('無法建立 PostgreSQL 資料庫連接，請檢查配置和網絡狀態');
       }
     });
   });

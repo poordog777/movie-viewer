@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { setupConfig } from './config';
 import { env } from './config/env';
-import { initializeDatabases } from './config/database/connection';
+import { initializeDatabase } from './config/database/db';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import routes from './routes';
 import passport from 'passport';
@@ -31,7 +31,7 @@ export const startServer = async () => {
     console.log('正在啟動伺服器...');
     
     console.log('正在連接資料庫...');
-    await initializeDatabases();
+    await initializeDatabase();
     console.log('資料庫連接成功');
     
     // 啟動 HTTP 伺服器
