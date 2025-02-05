@@ -1,5 +1,4 @@
 import { Prisma } from '@prisma/client';
-import { MongooseError } from 'mongoose';
 
 export class DatabaseError extends Error {
   constructor(
@@ -42,26 +41,3 @@ export const handlePrismaError = (error: any): DatabaseError => {
   return new DatabaseError('未預期的錯誤', error, 'UNEXPECTED');
 };
 
-export const handleMongooseError = (error: any): DatabaseError => {
-  // 處理連接相關錯誤
-  if (error.name === 'MongoServerSelectionError') {
-    return new DatabaseError('無法連接到 MongoDB 伺服器', error, 'CONNECTION_ERROR');
-  }
-  if (error.name === 'MongoNetworkError') {
-    return new DatabaseError('MongoDB 網路連接錯誤', error, 'NETWORK_ERROR');
-  }
-
-  // 處理操作相關錯誤
-  if (error instanceof MongooseError) {
-    if (error.name === 'ValidationError') {
-      return new DatabaseError('資料驗證錯誤', error, 'VALIDATION');
-    }
-    if (error.name === 'CastError') {
-      return new DatabaseError('資料類型錯誤', error, 'CAST_ERROR');
-    }
-  }
-  if (error.code === 11000) {
-    return new DatabaseError('唯一性約束衝突', error, 'DUPLICATE_KEY');
-  }
-  return new DatabaseError('資料庫操作錯誤', error, 'UNKNOWN');
-};

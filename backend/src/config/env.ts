@@ -4,11 +4,10 @@ dotenv.config();
 
 const requiredEnvVars = [
   'DATABASE_URL',
-  'MONGODB_URI',
   'JWT_SECRET',
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
-  // 'TMDB_API_KEY'
+  'TMDB_API_KEY'
 ];
 
 requiredEnvVars.forEach(varName => {
@@ -21,7 +20,6 @@ export const env = {
   port: process.env.PORT || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
   databaseUrl: process.env.DATABASE_URL,
-  mongodbUri: process.env.MONGODB_URI,
   jwtSecret: process.env.JWT_SECRET,
   tmdbApiKey: process.env.TMDB_API_KEY,
   googleClientId: process.env.GOOGLE_CLIENT_ID,
