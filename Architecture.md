@@ -27,7 +27,6 @@ CREATE TABLE users (
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
 ```
 
 #### 2. Movies 表
@@ -47,17 +46,17 @@ CREATE TABLE movies (
 
 CREATE INDEX idx_movies_release_date ON movies(release_date);
 CREATE INDEX idx_movies_popularity ON movies(popularity);
+CREATE INDEX idx_movies_vote_average ON movies(vote_average);
 ```
 
 #### 3. Ratings 表
-用戶對電影的評分和評論
+用戶對電影的評分
 ```sql
 CREATE TABLE ratings (
     id          SERIAL PRIMARY KEY,
     user_id     INTEGER REFERENCES users(id) ON DELETE CASCADE,
     movie_id    INTEGER NOT NULL,
     score       SMALLINT NOT NULL,
-    comment     TEXT,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT rating_score_range CHECK (score >= 1 AND score <= 5),
     UNIQUE(user_id, movie_id)
@@ -67,7 +66,24 @@ CREATE INDEX idx_ratings_user_movie ON ratings(user_id, movie_id);
 CREATE INDEX idx_ratings_movie_score ON ratings(movie_id, score);
 ```
 
-#### 4. Favorites 表
+#### 4. Reviews 表
+用戶對電影的評論
+```sql
+CREATE TABLE reviews (
+    id          SERIAL PRIMARY KEY,
+    user_id     INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    movie_id    INTEGER NOT NULL,
+    content     TEXT NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, movie_id)
+);
+
+CREATE INDEX idx_reviews_user_movie ON reviews(user_id, movie_id);
+CREATE INDEX idx_reviews_movie_created ON reviews(movie_id, created_at);
+```
+
+#### 5. Favorites 表
 用戶的電影收藏清單
 ```sql
 CREATE TABLE favorites (
@@ -88,7 +104,12 @@ CREATE INDEX idx_favorites_user_movie ON favorites(user_id, movie_id);
    - CASCADE DELETE
    - 唯一約束確保一個用戶只能對一部電影評分一次
 
-2. User - Favorite 關係
+2. User - Review 關係
+   - 一對多關係
+   - CASCADE DELETE
+   - 唯一約束確保一個用戶只能對一部電影發表一個評論
+
+3. User - Favorite 關係
    - 一對多關係
    - CASCADE DELETE
    - 唯一約束確保不重複收藏
@@ -138,6 +159,38 @@ sequenceDiagram
     Backend->>Frontend: 返回數據
 ```
 
+### 3. 電影瀏覽流程
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant DB
+    participant TMDB
+
+    alt 主頁熱門電影
+        User->>Frontend: 訪問主頁
+        Frontend->>Backend: 請求熱門電影
+        Backend->>DB: 查詢本地快取
+        alt 快取有效
+            DB->>Backend: 返回排序後數據
+        else 需要更新
+            Backend->>TMDB: 獲取最新熱門電影
+            TMDB->>Backend: 返回電影數據
+            Backend->>DB: 更新快取
+        end
+        Backend->>Frontend: 返回評分排序的電影列表
+    else 搜尋電影
+        User->>Frontend: 輸入搜尋關鍵字
+        Frontend->>Backend: 發送搜尋請求
+        Backend->>TMDB: 搜尋 API 請求
+        TMDB->>Backend: 返回搜尋結果
+        Backend->>DB: 更新快取(可選)
+        Backend->>Frontend: 返回搜尋結果
+    end
+```
+
 ## 技術選擇說明
 
 1. 前端技術
@@ -163,6 +216,11 @@ sequenceDiagram
    - 資料驗證：使用 Joi 驗證所有輸入
 
 5. 效能優化
-   - 資料庫索引：優化查詢性能
+   - 資料庫索引：
+     - movies 表：release_date、popularity、vote_average 索引
+     - ratings 表：user_movie、movie_score 複合索引
+     - reviews 表：user_movie、movie_created 複合索引
    - 本地快取：減少 TMDB API 調用
+     - 熱門電影快取：定期更新
+     - 搜尋結果快取：減少重複請求
    - API 響應壓縮：減少傳輸大小
