@@ -32,7 +32,7 @@ const tmdbService = new TMDBService(env.tmdbApiKey || '');
 router.get('/popular', 
   validateRequest(movieValidators.pageQuery),
   catchAsync(async (req: Request, res: Response) => {
-    const page = Number(req.query.page) || 1;
+    const page = req.query.page ? Number(req.query.page) : 1;
     const result = await tmdbService.getPopularMovies({ page });
     res.json(createResponse('success', result.data));
   })

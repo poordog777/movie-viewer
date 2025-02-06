@@ -32,7 +32,7 @@
 
 | Method | Endpoint | 說明 |
 |--------|----------|------|
-| POST | /auth/logout | 登出（撤銷 Refresh Token） |
+| POST | /auth/logout | 登出 |
 | GET | /movies/favorites | 取得用戶收藏的所有電影 |
 | POST | /movies/:movieId/favorite | 收藏電影 |
 | DELETE | /movies/:movieId/favorite | 取消收藏 |
@@ -44,20 +44,17 @@
 ## 開發順序
 
 ### 第 1 階段：用戶認證 & JWT
-- [ ] POST /auth/register（註冊）
-- [ ] POST /auth/login（登入 + 回傳 JWT & Refresh Token）
+- [✓] POST /auth/register（註冊）
+- [✓] POST /auth/login（登入 + 回傳 JWT）
 - [ ] POST /auth/google-login（Google 登入）
-- [ ] POST /auth/forgot-password（忘記密碼）
-- [ ] Middleware：建立 authMiddleware 來驗證 JWT
-- [ ] 新增 refresh_tokens 資料表
-- [ ] POST /auth/refresh-token（刷新 Access Token）
-- [ ] POST /auth/logout（登出，撤銷 Refresh Token）
+- [ ] POST /auth/logout（登出）
 
 ### 第 2 階段：電影資料串接
 - [ ] GET /movies/popular（熱門電影）
 - [ ] GET /movies/search?q=關鍵字（搜尋電影）
 
 ### 第 3 階段：用戶功能（需驗證 JWT）
+- [ ] GET  /movies/favorites（取得用戶收藏的所有電影）
 - [ ] POST /movies/:movieId/favorite（收藏電影）
 - [ ] DELETE /movies/:movieId/favorite（取消收藏）
 - [ ] POST /movies/:movieId/rating（評分電影）

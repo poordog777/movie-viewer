@@ -109,6 +109,7 @@ describe('用戶評分測試', () => {
 
   it('應該能夠創建評分記錄', async () => {
     await prisma.$transaction(async (tx) => {
+      // 創建測試用戶
       const user = await tx.user.create({
         data: {
           email: TEST_EMAIL,
@@ -117,26 +118,52 @@ describe('用戶評分測試', () => {
         }
       });
 
+      // 創建測試電影
+      const movie = await tx.movie.create({
+        data: {
+          id: 12345,
+          title: '測試電影',
+          overview: '這是一部測試電影',
+          releaseDate: new Date(),
+          voteAverage: 0,
+          voteCount: 0
+        }
+      });
+
+      // 創建評分
       const rating = await tx.rating.create({
         data: {
           userId: user.id,
-          movieId: 12345,
+          movieId: movie.id,
           score: 4
         }
       });
 
       expect(rating.score).to.equal(4);
-      expect(rating.movieId).to.equal(12345);
+      expect(rating.movieId).to.equal(movie.id);
     });
   });
 
   it('不應允許無效的評分數值', async () => {
     await prisma.$transaction(async (tx) => {
+      // 創建測試用戶
       const user = await tx.user.create({
         data: {
           email: TEST_EMAIL,
           password: 'hashedPassword123',
           name: 'Invalid Rating User'
+        }
+      });
+
+      // 創建測試電影
+      const movie = await tx.movie.create({
+        data: {
+          id: 12346,
+          title: '測試電影2',
+          overview: '這是另一部測試電影',
+          releaseDate: new Date(),
+          voteAverage: 0,
+          voteCount: 0
         }
       });
 
@@ -147,7 +174,7 @@ describe('用戶評分測試', () => {
           await tx.rating.create({
             data: {
               userId: user.id,
-              movieId: 12346,
+              movieId: movie.id,
               score: invalidScore
             }
           });
@@ -169,11 +196,23 @@ describe('用戶評分測試', () => {
         }
       });
 
+      // 創建測試電影
+      const movie = await tx.movie.create({
+        data: {
+          id: 12347,
+          title: '測試電影3',
+          overview: '這是第三部測試電影',
+          releaseDate: new Date(),
+          voteAverage: 0,
+          voteCount: 0
+        }
+      });
+
       // 第一次評分
       await tx.rating.create({
         data: {
           userId: user.id,
-          movieId: 12345,
+          movieId: movie.id,
           score: 4
         }
       });
@@ -183,7 +222,7 @@ describe('用戶評分測試', () => {
         await tx.rating.create({
           data: {
             userId: user.id,
-            movieId: 12345,
+            movieId: movie.id,
             score: 5
           }
         });

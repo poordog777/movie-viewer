@@ -4,7 +4,7 @@ import request from 'supertest';
 import sinon from 'sinon';
 import passport from 'passport';
 import { Request, Response, NextFunction } from 'express';
-import { app } from '../../server';
+import { app } from '../../app';
 import { prisma } from '../../config/database/postgresql';
 import { StateManager } from '../../config/oauth';
 
@@ -18,7 +18,7 @@ describe('Google OAuth 認證測試', () => {
   it('應該提供 Google 登入的 URL', (done) => {
     // 模擬 StateManager.generateState
     sinon.stub(StateManager, 'generateState').returns('test-state');
-    
+
     // 模擬 passport.authenticate
     const authenticateStub = sinon.stub(passport, 'authenticate').returns(
       (req: Request, res: Response, next: NextFunction) => {

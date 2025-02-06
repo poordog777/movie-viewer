@@ -1,28 +1,6 @@
-import express from 'express';
-import cors from 'cors';
-import { setupConfig } from './config';
+import { app } from './app';
 import { env } from './config/env';
 import { initializeDatabase } from './config/database/db';
-import { errorHandler, notFound } from './middleware/error.middleware';
-import routes from './routes';
-import passport from 'passport';
-
-export const app = express();
-
-app.use(cors());
-app.use(express.json());
-app.use(passport.initialize());
-
-setupConfig(app);
-
-// 註冊 API 路由
-app.use(routes);
-
-// 處理 404 錯誤
-app.use(notFound);
-
-// 全域錯誤處理
-app.use(errorHandler);
 
 const PORT = env.port;
 
@@ -52,4 +30,7 @@ export const startServer = async () => {
   }
 };
 
-startServer();
+// 只在直接執行此文件時啟動服務器
+if (require.main === module) {
+  startServer();
+}
