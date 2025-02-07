@@ -8,9 +8,8 @@ import { loginSchema, registerSchema } from '../validators/auth.validator';
 import passport from 'passport';
 import { StateManager } from '../config/oauth';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { env } from '../config/env';
 import { User } from '@prisma/client';
+import { generateToken } from '../utils/jwt.utils';
 
 interface AuthError extends Error {
   status?: number;
@@ -44,11 +43,10 @@ router.post('/login',
       }
 
       // 生成 JWT
-      const token = jwt.sign(
-        { userId: user.id, email: user.email },
-        env.jwtSecret || 'your-secret-key',
-        { expiresIn: '24h' }
-      );
+    const token = generateToken({
+      userId: user.id,
+      email: user.email
+    });
 
       res.json(
         createResponse('success', {
@@ -68,7 +66,90 @@ router.post('/login',
  * @swagger
  * /auth/register:
  *   post:
+ *     tags:
+ *       - 認證
  *     summary: 用戶註冊
+ *     description: 創建新用戶帳號並返回 JWT Token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: 使用者名稱
+ *                 example: "測試用戶"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: 電子郵件地址
+ *                 example: "test@example.com"
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: 密碼（至少8字元，需包含大小寫字母和數字）
+ *                 example: "Password123"
+ *     responses:
+ *       201:
+ *         description: 註冊成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "success"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                       description: JWT Token
+ *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
+ *                 message:
+ *                   type: string
+ *                   example: "註冊成功"
+ *       400:
+ *         description: 請求參數錯誤
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "fail"
+ *                 message:
+ *                   type: string
+ *                   example: "密碼需包含大小寫字母和數字"
+ *                 errorCode:
+ *                   type: string
+ *                   example: "VALIDATION_ERROR"
+ *       409:
+ *         description: 電子郵件已存在
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "fail"
+ *                 message:
+ *                   type: string
+ *                   example: "此信箱已被註冊"
+ *                 errorCode:
+ *                   type: string
+ *                   example: "AUTH_EMAIL_EXISTS"
  */
 router.post('/register',
   validateRequest(registerSchema),
@@ -100,11 +181,10 @@ router.post('/register',
     });
 
     // 生成 JWT
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      env.jwtSecret || 'your-secret-key',
-      { expiresIn: '24h' }
-    );
+    const token = generateToken({
+      userId: user.id,
+      email: user.email
+    });
 
     res.status(201).json(
       createResponse('success', {
@@ -153,11 +233,10 @@ router.get('/google/callback',
       }
 
       // 生成 JWT
-      const token = jwt.sign(
-        { userId: user.id, email: user.email },
-        env.jwtSecret || 'your-secret-key',
-        { expiresIn: '24h' }
-      );
+      const token = generateToken({
+        userId: user.id,
+        email: user.email
+      });
 
       res.json(
         createResponse('success', {
