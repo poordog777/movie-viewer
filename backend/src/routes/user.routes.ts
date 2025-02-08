@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { prisma } from '../config/database/postgresql';
+import { prisma } from '../config/database';
 import { createResponse } from '../types/response';
 import { BusinessError, ErrorCodes } from '../types/error';
 import { catchAsync } from '../middleware/error.middleware';

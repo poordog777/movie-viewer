@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError, ErrorCodes } from '../types/error';
 import { verifyToken } from '../utils/jwt.utils';
-import { prisma } from '../config/database/postgresql';
+import { prisma } from '../config/database';
 import type { User } from '@prisma/client';
 
 // 定義請求中的用戶型別

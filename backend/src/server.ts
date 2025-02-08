@@ -1,6 +1,6 @@
 import { app } from './app';
 import { env } from './config/env';
-import { initializeDatabase } from './config/database/db';
+import { initializeDatabase } from './config/database';
 
 const PORT = env.port;
 

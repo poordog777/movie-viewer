@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { Schema } from 'joi';
-import { createResponse } from '../types/response';
 import { BusinessError } from '../types/error';
 
 type ValidationType = 'body' | 'query' | 'params';
