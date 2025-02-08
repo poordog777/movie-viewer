@@ -203,24 +203,41 @@ sequenceDiagram
    - TypeScript：共用前端的型別定義
    - Prisma：類型安全的 ORM，自動生成類型
 
-3. 資料庫選擇
-   - PostgreSQL：
-     - 用戶數據：強一致性需求
-     - 評分和評論：關聯式查詢
-     - 電影資訊快取：減少 API 調用
+3. 環境配置架構
+   - 雙環境設計：
+     * Development：整合開發和測試環境，提供完整的開發功能
+     * Production：專注於效能和穩定性的生產環境
+   - 環境變數管理：
+     * dotenv-cli：動態載入環境設定
+     * 分離的配置檔案：.env.development 和 .env.production
+   - 環境特性：
+     * Development：
+       - 詳細的日誌輸出
+       - 支援測試和開發工具
+       - 熱重載功能
+     * Production：
+       - 最小化日誌輸出
+       - 效能優化設定
+       - 強化的安全措施
 
-4. 安全性考慮
+4. 資料庫選擇
+   - PostgreSQL：
+     * 用戶數據：強一致性需求
+     * 評分和評論：關聯式查詢
+     * 電影資訊快取：減少 API 調用
+
+5. 安全性考慮
    - JWT + OAuth：安全的身份驗證
    - Helmet：HTTP 安全標頭
    - Rate Limiting：防止濫用
    - 資料驗證：使用 Joi 驗證所有輸入
 
-5. 效能優化
+6. 效能優化
    - 資料庫索引：
-     - movies 表：release_date、popularity、vote_average 索引
-     - ratings 表：user_movie、movie_score 複合索引
-     - reviews 表：user_movie、movie_created 複合索引
+     * movies 表：release_date、popularity、vote_average 索引
+     * ratings 表：user_movie、movie_score 複合索引
+     * reviews 表：user_movie、movie_created 複合索引
    - 本地快取：減少 TMDB API 調用
-     - 熱門電影快取：定期更新
-     - 搜尋結果快取：減少重複請求
+     * 熱門電影快取：定期更新
+     * 搜尋結果快取：減少重複請求
    - API 響應壓縮：減少傳輸大小

@@ -77,8 +77,8 @@ npm install
 ```
 
 3. 環境設定
-- 複製 `.env.example` 到 `.env`
-- 設定必要的環境變數：
+- 複製 `.env.example` 到 `.env.development` 和 `.env.production`
+- 分別設定開發和生產環境的必要變數：
   - DATABASE_URL
   - JWT_SECRET
   - TMDB_API_KEY
@@ -87,7 +87,8 @@ npm install
 4. 啟動開發服務器
 ```bash
 # 後端
-npm run dev
+npm run dev     # 使用開發環境配置
+npm run start   # 使用正式環境配置
 
 # 前端
 npm start
@@ -111,6 +112,17 @@ movie-viewer/
 │   └── tests/            # 測試檔案
 └── frontend/             # 前端程式碼
 ```
+
+## 環境配置
+專案採用兩套環境配置：
+- 開發環境（Development）：用於本地開發和測試
+  * 使用 .env.development
+  * 包含更詳細的日誌輸出
+  * 支援測試功能
+- 生產環境（Production）：用於實際部署
+  * 使用 .env.production
+  * 優化的效能設定
+  * 最小化日誌輸出
 
 ## 測試
 ```bash
