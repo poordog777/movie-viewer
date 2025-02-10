@@ -3,9 +3,7 @@
 ## 功能清單
 
 ### 用戶類
-- 註冊
-- 登入
-- GOOGLE登入
+- Google 帳號登入
 - 登出
 - 收藏電影
 - 對電影評分(1~5)
@@ -21,9 +19,8 @@
 
 | Method | Endpoint | 說明 |
 |--------|----------|------|
-| POST | /auth/register | 註冊帳號 |
-| POST | /auth/login | 一般登入（回傳 JWT） |
-| POST | /auth/google-login | Google 登入（回傳 JWT） |
+| GET | /auth/google | Google OAuth 登入入口 |
+| GET | /auth/google/callback | Google OAuth 回調（回傳 JWT） |
 | GET | /movies/popular | 取得近期熱門電影（評分高到低） |
 | GET | /movies/search?q= | 關鍵字搜尋電影 |
 
@@ -44,9 +41,8 @@
 ## 開發順序
 
 ### 第 1 階段：用戶認證 & JWT
-- [✓] POST /auth/register（註冊）
-- [✓] POST /auth/login（登入 + 回傳 JWT）
-- [ ] POST /auth/google-login（Google 登入）
+- [ ] GET /auth/google（重定向到 Google OAuth）
+- [ ] GET /auth/google/callback（處理回調 + 回傳 JWT）
 - [ ] POST /auth/logout（登出）
 
 ### 第 2 階段：電影資料串接

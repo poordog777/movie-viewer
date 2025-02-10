@@ -1,13 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { prisma } from '../config/database';
 import { createResponse } from '../types/response';
 import { BusinessError, ErrorCodes } from '../types/error';
-import { catchAsync } from '../middleware/error.middleware';
 import { validateRequest } from '../middleware/validator.middleware';
-import { loginSchema, registerSchema } from '../validators/auth.validator';
+import { googleCallbackSchema } from '../validators/auth.validator';
 import passport from 'passport';
 import { StateManager } from '../config/oauth';
-import bcrypt from 'bcrypt';
 import { User } from '@prisma/client';
 import { generateToken } from '../utils/jwt.utils';
 
@@ -15,89 +12,52 @@ interface AuthError extends Error {
   status?: number;
 }
 
-interface AuthInfo {
-  message: string;
-}
-
 const router = Router();
 
 /**
  * @swagger
- * /auth/login:
- *   post:
- *     summary: 用戶登入
+ * /auth/google:
+ *   get:
+ *     tags:
+ *       - 認證
+ *     summary: Google OAuth 登入
+ *     description: 重定向到 Google 登入頁面進行身份認證
+ *     responses:
+ *       302:
+ *         description: 重定向到 Google 登入頁面
  */
-router.post('/login', 
-  validateRequest(loginSchema),
-  (req: Request, res: Response, next: NextFunction) => {
-    passport.authenticate('local', { session: false }, (err: AuthError | null, user: User | false, info: AuthInfo | undefined) => {
-      if (err) {
-        return next(err);
-      }
-
-      if (!user) {
-        throw new BusinessError(
-          info?.message || '登入失敗',
-          ErrorCodes.AUTH_INVALID_CREDENTIALS
-        );
-      }
-
-      // 生成 JWT
-    const token = generateToken({
-      userId: user.id,
-      email: user.email
-    });
-
-      res.json(
-        createResponse('success', {
-          token,
-          user: {
-            id: user.id,
-            email: user.email,
-            name: user.name
-          }
-        }, '登入成功')
-      );
-    })(req, res, next);
-  }
-);
+router.get('/google', (req: Request, res: Response) => {
+  const state = StateManager.generateState();
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    state
+  })(req, res);
+});
 
 /**
  * @swagger
- * /auth/register:
- *   post:
+ * /auth/google/callback:
+ *   get:
  *     tags:
  *       - 認證
- *     summary: 用戶註冊
- *     description: 創建新用戶帳號並返回 JWT Token
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - email
- *               - password
- *             properties:
- *               name:
- *                 type: string
- *                 description: 使用者名稱
- *                 example: "測試用戶"
- *               email:
- *                 type: string
- *                 format: email
- *                 description: 電子郵件地址
- *                 example: "test@example.com"
- *               password:
- *                 type: string
- *                 format: password
- *                 description: 密碼（至少8字元，需包含大小寫字母和數字）
- *                 example: "Password123"
+ *     summary: 處理 Google OAuth 回調
+ *     description: 處理 Google 登入回調，驗證用戶身份並返回 JWT Token
+ *     parameters:
+ *       - in: query
+ *         name: state
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: OAuth state 參數
+ *       - in: query
+ *         name: code
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: OAuth authorization code
  *     responses:
- *       201:
- *         description: 註冊成功
+ *       200:
+ *         description: 登入成功
  *         content:
  *           application/json:
  *             schema:
@@ -111,105 +71,26 @@ router.post('/login',
  *                   properties:
  *                     token:
  *                       type: string
- *                       description: JWT Token
- *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *                       description: JWT Token，有效期 3 個月
  *                     user:
- *                       $ref: '#/components/schemas/User'
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                         name:
+ *                           type: string
+ *                         email:
+ *                           type: string
  *                 message:
  *                   type: string
- *                   example: "註冊成功"
+ *                   example: "Google 登入成功"
+ *       401:
+ *         description: 驗證失敗
  *       400:
  *         description: 請求參數錯誤
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "fail"
- *                 message:
- *                   type: string
- *                   example: "密碼需包含大小寫字母和數字"
- *                 errorCode:
- *                   type: string
- *                   example: "VALIDATION_ERROR"
- *       409:
- *         description: 電子郵件已存在
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "fail"
- *                 message:
- *                   type: string
- *                   example: "此信箱已被註冊"
- *                 errorCode:
- *                   type: string
- *                   example: "AUTH_EMAIL_EXISTS"
  */
-router.post('/register',
-  validateRequest(registerSchema),
-  catchAsync(async (req: Request, res: Response) => {
-    const { name, email, password } = req.body;
-
-    // 檢查信箱是否已存在
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (existingUser) {
-      throw new BusinessError(
-        '此信箱已被註冊',
-        ErrorCodes.AUTH_EMAIL_EXISTS
-      );
-    }
-
-    // 加密密碼
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 創建用戶
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword
-      }
-    });
-
-    // 生成 JWT
-    const token = generateToken({
-      userId: user.id,
-      email: user.email
-    });
-
-    res.status(201).json(
-      createResponse('success', {
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email
-        }
-      }, '註冊成功')
-    );
-  })
-);
-
-// Google OAuth 登入
-router.get('/google', (req: Request, res: Response) => {
-  const state = StateManager.generateState();
-  passport.authenticate('google', {
-    scope: ['profile', 'email'],
-    state
-  })(req, res);
-});
-
-// Google OAuth 回調處理
 router.get('/google/callback',
+  validateRequest(googleCallbackSchema),
   (req: Request, res: Response, next: NextFunction) => {
     const { state } = req.query;
     

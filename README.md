@@ -4,7 +4,7 @@ Movie Viewer 是一個現代化的電影評論平台，整合第三方 TMDB API 
 
 ## 功能特點
 - 整合 TMDB API 即時電影資訊
-- 多種登入方式（一般登入 + Google OAuth 2.0）
+- Google 帳號快速登入
 - 電影評分與評論系統
 - 個人化電影收藏清單
 - 電影瀏覽模式
@@ -18,8 +18,8 @@ Movie Viewer 是一個現代化的電影評論平台，整合第三方 TMDB API 
 - TypeScript
 - dotenv（環境變數管理）
 - Helmet（安全性防護）
-- JWT + OAuth 2.0（身份驗證）
-- Joi（請求資料驗證）
+- Google OAuth 2.0 + JWT（身份驗證）
+- Joi（API 請求參數驗證）
 - Swagger（API 文檔）
 - Morgan（日誌系統）
 
@@ -80,9 +80,10 @@ npm install
 - 複製 `.env.example` 到 `.env.development` 和 `.env.production`
 - 分別設定開發和生產環境的必要變數：
   - DATABASE_URL
-  - JWT_SECRET
-  - TMDB_API_KEY
-  - GOOGLE_CLIENT_ID
+  - JWT_SECRET (用於簽署 Google OAuth 登入後的 JWT Token)
+  - GOOGLE_CLIENT_ID (從 Google Cloud Console 獲取)
+  - GOOGLE_CLIENT_SECRET (從 Google Cloud Console 獲取)
+  - TMDB_API_KEY (從 TMDB 開發者平台獲取)
 
 4. 啟動開發服務器
 ```bash

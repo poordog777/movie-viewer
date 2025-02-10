@@ -13,7 +13,14 @@
     "test:models": "dotenv -e .env.development -- cross-env NODE_ENV=development mocha -r ts-node/register \"src/tests/models/**/*.test.ts\"",
     "test:database": "dotenv -e .env.development -- cross-env NODE_ENV=development mocha -r ts-node/register \"src/tests/database/**/*.test.ts\"",
     "test:security": "dotenv -e .env.development -- cross-env NODE_ENV=development mocha -r ts-node/register \"src/tests/security/**/*.test.ts\"",
-    "test:movies": "dotenv -e .env.development -- cross-env NODE_ENV=development mocha -r ts-node/register \"src/tests/movies/**/*.test.ts\""
+    "test:movies": "dotenv -e .env.development -- cross-env NODE_ENV=development mocha -r ts-node/register \"src/tests/movies/**/*.test.ts\"",
+    "migrate:dev": "dotenv -e .env.development -- prisma migrate dev",
+    "migrate:prod": "dotenv -e .env.production -- prisma migrate deploy",
+    "migrate:status": "dotenv -e .env.development -- prisma migrate status",
+    "db": "dotenv -e .env.development -- npx prisma db push ; npx prisma generate",
+    "db:push": "dotenv -e .env.development -- prisma db push",
+    "db:seed": "dotenv -e .env.development -- prisma db seed",
+    "prisma:generate": "prisma generate"
   },
   "keywords": [],
   "author": "",
