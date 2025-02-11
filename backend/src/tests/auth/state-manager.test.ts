@@ -7,6 +7,11 @@ describe('StateManager 測試', () => {
     StateManager.clearExpiredStates();
   });
 
+  after(() => {
+    // 清理所有計時器
+    StateManager.clearTimers();
+  });
+
   it('應該能生成有效的 state 參數', () => {
     const state = StateManager.generateState();
     expect(state).to.be.a('string');

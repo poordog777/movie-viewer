@@ -41,9 +41,9 @@
 ## 開發順序
 
 ### 第 1 階段：用戶認證 & JWT
-- [ ] GET /auth/google（重定向到 Google OAuth）
-- [ ] GET /auth/google/callback（處理回調 + 回傳 JWT）
-- [ ] POST /auth/logout（登出）
+- [x] GET /auth/google（重定向到 Google OAuth）
+- [x] GET /auth/google/callback（處理回調 + 回傳 JWT）
+- [x] POST /auth/logout（登出）
 
 ### 第 2 階段：電影資料串接
 - [ ] GET /movies/popular（熱門電影）

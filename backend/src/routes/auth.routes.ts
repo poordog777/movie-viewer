@@ -7,6 +7,7 @@ import passport from 'passport';
 import { StateManager } from '../config/oauth';
 import { User } from '@prisma/client';
 import { generateToken } from '../utils/jwt.utils';
+import { authenticate } from '../middleware/auth.middleware';
 
 interface AuthError extends Error {
   status?: number;
@@ -69,5 +70,10 @@ router.get('/google/callback',
     });
   }
 );
+
+// 登出路由
+router.post('/logout', authenticate, (req: Request, res: Response) => {
+  res.json(createResponse('success', null, '登出成功'));
+});
 
 export default router;

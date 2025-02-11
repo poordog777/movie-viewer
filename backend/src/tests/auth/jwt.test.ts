@@ -76,12 +76,23 @@ describe('JWT 身份驗證測試', () => {
       this.timeout(5000); // 設置更長的超時時間
       const shortLivedToken = jwt.sign(mockUser, process.env.JWT_SECRET as string, { expiresIn: '3s' });
       
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const decoded = jwt.decode(shortLivedToken, { complete: true }) as any;
-      const now = Math.floor(Date.now() / 1000);
-      
-      expect(decoded.payload.exp - now).to.be.below(2);
+      let timeoutId: NodeJS.Timeout;
+      try {
+        await new Promise((resolve, reject) => {
+          timeoutId = setTimeout(() => {
+            const decoded = jwt.decode(shortLivedToken, { complete: true }) as any;
+            const now = Math.floor(Date.now() / 1000);
+            try {
+              expect(decoded.payload.exp - now).to.be.below(2);
+              resolve(true);
+            } catch (error) {
+              reject(error);
+            }
+          }, 2000);
+        });
+      } finally {
+        clearTimeout(timeoutId!);
+      }
     });
 
     it('應該正確處理 token 的時區問題', () => {

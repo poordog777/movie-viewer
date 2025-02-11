@@ -11,16 +11,19 @@ export const googleOAuthConfig = {
 export class StateManager {
   private static states = new Set<string>();
   private static readonly EXPIRY_TIME = 60 * 60 * 1000; // 60 分鐘
+  private static timers = new Set<NodeJS.Timeout>();
 
   static generateState(): string {
     const state = Math.random().toString(36).substring(2);
     this.states.add(state);
 
     // 設定狀態過期
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       this.states.delete(state);
+      this.timers.delete(timer);
     }, this.EXPIRY_TIME);
 
+    this.timers.add(timer);
     return state;
   }
 
@@ -34,5 +37,12 @@ export class StateManager {
 
   static clearExpiredStates(): void {
     this.states.clear();
+  }
+
+  static clearTimers(): void {
+    for (const timer of this.timers) {
+      clearTimeout(timer);
+    }
+    this.timers.clear();
   }
 }
