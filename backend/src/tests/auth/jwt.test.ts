@@ -1,4 +1,3 @@
-import '../setup';
 import { expect } from 'chai';
 import jwt from 'jsonwebtoken';
 import { generateToken, verifyToken } from '../../utils/jwt.utils';

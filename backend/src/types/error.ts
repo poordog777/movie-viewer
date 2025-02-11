@@ -10,8 +10,8 @@ export class AppError extends Error {
 }
 
 export class BusinessError extends AppError {
-  constructor(message: string, errorCode: string) {
-    super(400, message, errorCode);
+  constructor(message: string, errorCode: string, statusCode: number = 400) {
+    super(statusCode, message, errorCode);
     this.name = 'BusinessError';
   }
 }
