@@ -38,7 +38,7 @@ passport.use(new JwtStrategy(
           updatedAt: true
         }
       });
-      
+
       if (!user) {
         return done(null, false);
       }
@@ -72,22 +72,11 @@ passport.use(
 
         // 使用 transaction 來處理並發問題
         const result = await prisma.$transaction(async (tx) => {
-          const existingUser = await tx.user.findFirst({
-            where: {
-              OR: [
-                { googleId: profile.id },
-                { email }
-              ]
-            }
+          const existingUser = await tx.user.findUnique({
+            where: { googleId: profile.id }
           });
 
           if (existingUser) {
-            if (!existingUser.googleId) {
-              return await tx.user.update({
-                where: { id: existingUser.id },
-                data: { googleId: profile.id }
-              });
-            }
             return existingUser;
           }
 

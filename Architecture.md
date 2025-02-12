@@ -84,13 +84,12 @@ sequenceDiagram
     participant DB
 
     User->>Frontend: 點擊 Google 登入
-    Frontend->>Google: 重定向到 Google OAuth
-    Google->>Frontend: 返回授權碼
-    Frontend->>Backend: 發送授權碼
-    Backend->>Google: 驗證授權碼
-    Google->>Backend: 返回用戶信息
-    Backend->>DB: 創建用戶
-    Backend->>Frontend: 返回 JWT Token
+    Frontend->>Backend: GET /auth/google
+    Backend->>Google: 重定向到 Google OAuth
+    Google-->>Backend: GET /auth/google/callback (授權碼)
+    Backend->>Google: 驗證並取得用戶資訊
+    Backend->>DB: 添加用戶（若不存在）
+    Backend->>Frontend: 回傳 JWT Token
 ```
 
 ### 2. 電影資訊處理流程
