@@ -5,38 +5,31 @@
 ### 用戶類
 - Google 帳號登入
 - 登出
-- 收藏電影
-- 對電影評分(1~5)
-- 對電影評論
+- 對電影評分(1~10分)
 
 ### 電影類
-- 主頁顯示近期熱門電影(評分高到低)
+- 主頁顯示近期熱門電影(按上映日期排序，顯示30部)
 - 搜尋特定電影(搜尋框)
 
 ## API 設計
 
 ### 🟢 公開 API（無須登入）
 
-| Method | Endpoint | 說明 |
-|--------|----------|------|
-| GET | /auth/google | Google OAuth 登入入口 |
-| GET | /auth/google/callback | Google OAuth 回調（回傳 JWT） |
-| GET | /movies/popular | 取得近期熱門電影（評分高到低） |
-| GET | /movies/search?q= | 關鍵字搜尋電影 |
+| Method | Endpoint | 說明 | 回應 |
+|--------|----------|------|------|
+| GET | /auth/google | Google OAuth 登入入口 | 重定向至 Google 登入頁面 |
+| GET | /auth/google/callback | Google OAuth 回調（回傳 JWT） | { token: string } |
+| GET | /movies/popular | 取得近期熱門電影（按上映日期排序） | { movies: [{ id: number, title: string, poster_path: string, release_date: string, popularity: number }], total: number } |
+| GET | /movies/search?q=關鍵字 | 關鍵字搜尋電影 | { movies: [{ id: number, title: string, poster_path: string, release_date: string }], total: number } |
+| GET | /movies/:movieId | 取得電影詳細資訊（包含平均評分） | { id: number, title: string, overview: string, poster_path: string, release_date: string, popularity: number, vote_average: number, vote_count: number } |
 
 ### 🔒 需要 JWT 認證的 API
 用戶請求時需帶上 `Authorization: Bearer <JWT Token>`
 
-| Method | Endpoint | 說明 |
-|--------|----------|------|
-| POST | /auth/logout | 登出 |
-| GET | /movies/favorites | 取得用戶收藏的所有電影 |
-| POST | /movies/:movieId/favorite | 收藏電影 |
-| DELETE | /movies/:movieId/favorite | 取消收藏 |
-| GET | /movies/:movieId/rating | 取得電影評分 |
-| POST | /movies/:movieId/rating | 評分電影（1~5分） |
-| GET | /movies/:movieId/reviews | 取得電影評論 |
-| POST | /movies/:movieId/review | 新增評論 |
+| Method | Endpoint | 說明 | 回應 |
+|--------|----------|------|------|
+| POST | /auth/logout | 登出 | { message: string } |
+| POST | /movies/:movieId/rating | 評分電影（1~10分）| { message: string } |
 
 ## 開發順序
 
@@ -46,14 +39,9 @@
 - [x] POST /auth/logout（登出）
 
 ### 第 2 階段：電影資料串接
-- [ ] GET /movies/popular（熱門電影）
+- [ ] GET /movies/popular（熱門電影，按上映日期排序）
 - [ ] GET /movies/search?q=關鍵字（搜尋電影）
+- [ ] GET /movies/:movieId（電影詳細資訊，包含平均評分）
 
-### 第 3 階段：用戶功能（需驗證 JWT）
-- [ ] GET  /movies/favorites（取得用戶收藏的所有電影）
-- [ ] POST /movies/:movieId/favorite（收藏電影）
-- [ ] DELETE /movies/:movieId/favorite（取消收藏）
+### 第 3 階段：評分功能（需驗證 JWT）
 - [ ] POST /movies/:movieId/rating（評分電影）
-- [ ] GET /movies/:movieId/rating（取得電影評分）
-- [ ] POST /movies/:movieId/review（新增評論）
-- [ ] GET /movies/:movieId/reviews（取得評論）
