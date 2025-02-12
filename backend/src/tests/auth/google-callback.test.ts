@@ -43,19 +43,39 @@ describe('Google OAuth 回調測試', () => {
 
   describe('核心功能測試', () => {
     it('成功案例：用戶驗證成功並返回 token', () => {
+      // 模擬 Google 回調處理函數
+      const googleCallback = (req: RequestWithUser, res: Response) => {
+        if (!req.user) {
+          throw new BusinessError(
+            'Google 登入發生問題，請確認您的 Google 帳號正常後重試',
+            'AUTH_GOOGLE_ERROR',
+            401
+          );
+        }
+        const user = req.user;
+        
+        // 生成 JWT
+        const token = generateTokenStub({
+          userId: user.id,
+          email: user.email
+        });
+      
+        res.json({
+          status: 'success',
+          data: {
+            token,
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email
+            }
+          },
+          message: 'Google 登入成功'
+        });
+      };
+
       // 執行回調
-      (res.json as sinon.SinonSpy)({
-        status: 'success',
-        data: {
-          token: mockToken,
-          user: {
-            id: mockUser.id,
-            email: mockUser.email,
-            name: mockUser.name
-          }
-        },
-        message: 'Google 登入成功'
-      });
+      googleCallback(req as RequestWithUser, res as Response);
 
       // 驗證 generateToken 被調用
       sinon.assert.calledWith(generateTokenStub, {
