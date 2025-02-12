@@ -1,8 +1,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { Request, Response } from 'express';
-import { StateManager } from '../../config/oauth';
-import { BusinessError, ErrorCodes } from '../../types/error';
+import { BusinessError } from '../../types/error';
 import * as jwtUtils from '../../utils/jwt.utils';
 import { User } from '@prisma/client';
 import { ParamsDictionary } from 'express-serve-static-core';
@@ -25,18 +24,15 @@ describe('Google OAuth 回調測試', () => {
   const mockToken = 'mock-jwt-token';
   let req: Partial<RequestWithUser>;
   let res: Partial<Response>;
-  let stateVerifyStub: sinon.SinonStub;
   let generateTokenStub: sinon.SinonStub;
 
   beforeEach(() => {
     req = {
-      query: { state: 'valid-state' },
       user: mockUser
     };
     res = {
       json: sinon.spy()
     };
-    stateVerifyStub = sinon.stub(StateManager, 'verifyState');
     generateTokenStub = sinon.stub(jwtUtils, 'generateToken');
     generateTokenStub.returns(mockToken);
   });
@@ -46,27 +42,26 @@ describe('Google OAuth 回調測試', () => {
   });
 
   describe('核心功能測試', () => {
-    it('成功案例：使用有效的 state 參數', () => {
-      stateVerifyStub.returns(true);
-
+    it('成功案例：用戶驗證成功並返回 token', () => {
       // 執行回調
-      const state = req.query?.state as string;
-      if (state && StateManager.verifyState(state)) {
-        (res.json as sinon.SinonSpy)({
-          status: 'success',
-          data: {
-            token: mockToken,
-            user: {
-              id: mockUser.id,
-              email: mockUser.email,
-              name: mockUser.name
-            }
+      (res.json as sinon.SinonSpy)({
+        status: 'success',
+        data: {
+          token: mockToken,
+          user: {
+            id: mockUser.id,
+            email: mockUser.email,
+            name: mockUser.name
           }
-        });
-      }
+        },
+        message: 'Google 登入成功'
+      });
 
-      // 驗證 state 驗證被調用
-      sinon.assert.calledWith(stateVerifyStub, 'valid-state');
+      // 驗證 generateToken 被調用
+      sinon.assert.calledWith(generateTokenStub, {
+        userId: mockUser.id,
+        email: mockUser.email
+      });
       
       // 驗證 response
       sinon.assert.called(res.json as sinon.SinonSpy);
@@ -79,20 +74,20 @@ describe('Google OAuth 回調測試', () => {
             email: mockUser.email,
             name: mockUser.name
           }
-        }
+        },
+        message: 'Google 登入成功'
       });
     });
 
-    it('失敗案例：使用無效的 state 參數', () => {
-      stateVerifyStub.returns(false);
+    it('失敗案例：沒有用戶資料', () => {
+      req.user = undefined;
       
       let error: BusinessError | null = null;
-      const state = req.query?.state as string;
       try {
-        if (!StateManager.verifyState(state)) {
+        if (!req.user) {
           throw new BusinessError(
-            '登入流程已過期，請重新點擊登入按鈕重試',
-            ErrorCodes.AUTH_GOOGLE_STATE_INVALID,
+            'Google 登入發生問題，請確認您的 Google 帳號正常後重試',
+            'AUTH_GOOGLE_ERROR',
             401
           );
         }
@@ -101,8 +96,9 @@ describe('Google OAuth 回調測試', () => {
       }
 
       expect(error).to.not.be.null;
-      expect(error?.message).to.equal('登入流程已過期，請重新點擊登入按鈕重試');
-      expect(error?.errorCode).to.equal(ErrorCodes.AUTH_GOOGLE_STATE_INVALID);
+      expect(error?.message).to.equal('Google 登入發生問題，請確認您的 Google 帳號正常後重試');
+      expect(error?.errorCode).to.equal('AUTH_GOOGLE_ERROR');
+      expect(error?.statusCode).to.equal(401);
     });
   });
 });

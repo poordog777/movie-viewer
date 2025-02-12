@@ -1,28 +1,37 @@
 import { app } from './app';
 import { env } from './config/env';
 import { initializeDatabase } from './config/database';
+import { prisma } from './config/database';
 
-const PORT = env.port;
+const PORT = Number(env.port);
 
 export const startServer = async () => {
   try {
     console.log('正在啟動伺服器...');
-    
-    console.log('正在連接資料庫...');
+
+    // 初始化資料庫
     await initializeDatabase();
-    console.log('資料庫連接成功');
+    console.log('資料庫連線成功');
     
     // 啟動 HTTP 伺服器
     const server = app.listen(PORT, () => {
-      console.log(`伺服器運行於 port ${PORT}`);
-      console.log('API 文檔可於 http://localhost:'+PORT+'/api-docs 查看');
+      console.log(`伺服器運行於連接埠 ${PORT}`);
+      console.log('API 文件可於 http://localhost:'+PORT+'/api-docs 檢視');
     });
 
-    // 設定 HTTP 伺服器錯誤處理
-    server.on('error', (error: Error) => {
-      console.error('HTTP 伺服器錯誤:', error);
-      process.exit(1);
-    });
+    // 註冊關閉處理程序
+    const shutdown = async () => {
+      console.log('正在關閉服務...');
+      
+      server.close();
+      await prisma.$disconnect();
+      
+      console.log('服務已完全關閉');
+      process.exit(0);
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
 
   } catch (error) {
     console.error('伺服器啟動失敗:', error);
@@ -30,7 +39,7 @@ export const startServer = async () => {
   }
 };
 
-// 只在直接執行此文件時啟動服務器
+// 只在直接執行此檔案時啟動伺服器
 if (require.main === module) {
   startServer();
 }

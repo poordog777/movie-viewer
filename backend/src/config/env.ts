@@ -24,5 +24,5 @@ export const env = {
   tmdbApiKey: process.env.TMDB_API_KEY,
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  apiUrl: process.env.API_URL || `http://localhost:${process.env.PORT || 3000}/api`
+  apiUrl: process.env.API_URL || `http://localhost:${process.env.PORT || 3000}`
 };
