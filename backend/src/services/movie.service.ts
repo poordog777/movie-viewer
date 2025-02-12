@@ -23,8 +23,20 @@ interface Movie {
   popularity: number;
 }
 
+interface SearchMovie {
+  id: number;
+  title: string;
+  posterPath: string | null;
+  releaseDate: string;
+}
+
 interface MoviesResponse {
   movies: Movie[];
+  total: number;
+}
+
+interface SearchMoviesResponse {
+  movies: SearchMovie[];
   total: number;
 }
 
@@ -80,6 +92,46 @@ class MovieService {
   }
 
   /**
+   * 搜尋電影
+   */
+  async searchMovies(query: string): Promise<SearchMoviesResponse> {
+    if (!query.trim()) {
+      return { movies: [], total: 0 };
+    }
+
+    try {
+      // 從 TMDB 搜尋電影
+      const response = await axios.get(`${this.tmdbBaseUrl}/search/movie`, {
+        params: {
+          api_key: this.tmdbApiKey,
+          query: query.trim(),
+          language: 'zh-TW',
+          region: 'TW',
+          include_adult: false  // 過濾成人內容
+        }
+      });
+
+      const movies = response.data.results as TMDBMovie[];
+
+      // 將搜尋結果快取到資料庫
+      await this.cacheMovies(movies);
+
+      // 回傳符合 API 規格的資料
+      return {
+        movies: movies.map(this.transformToSearchMovie),
+        total: response.data.total_results
+      };
+    } catch (error) {
+      console.error('Failed to search movies:', error);
+      throw new AppError(
+        500,
+        'Failed to search movies',
+        ErrorCodes.EXTERNAL_API_ERROR
+      );
+    }
+  }
+
+  /**
    * 從 TMDB API 取得熱門電影
    */
   private async fetchTMDBPopularMovies(page: number) {
@@ -89,7 +141,7 @@ class MovieService {
           api_key: this.tmdbApiKey,
           language: 'zh-TW',
           page,
-          region: 'TW'  // 優先取得台灣地區的電影資料
+          region: 'TW'
         }
       });
       return response.data;
@@ -144,7 +196,7 @@ class MovieService {
   }
 
   /**
-   * 將 TMDB 電影資料轉換為標準格式
+   * 將 TMDB 電影資料轉換為標準格式（用於熱門電影列表）
    */
   private transformToMovie(movie: TMDBMovie): Movie {
     return {
@@ -153,6 +205,18 @@ class MovieService {
       posterPath: movie.poster_path,
       releaseDate: movie.release_date,
       popularity: movie.popularity
+    };
+  }
+
+  /**
+   * 將 TMDB 電影資料轉換為搜尋結果格式
+   */
+  private transformToSearchMovie(movie: TMDBMovie): SearchMovie {
+    return {
+      id: movie.id,
+      title: movie.title,
+      posterPath: movie.poster_path,
+      releaseDate: movie.release_date
     };
   }
 }

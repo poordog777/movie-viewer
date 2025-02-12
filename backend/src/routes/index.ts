@@ -3,14 +3,16 @@ import authRoutes from './auth.routes';
 import healthRoutes from './health.routes';
 import movieRoutes from './movies.routes';
 
-
 const router = Router();
 const API_PREFIX = '/api/v1';
 
 // 註冊所有路由
-router.use(`${API_PREFIX}/health`, healthRoutes);
-router.use(`${API_PREFIX}/auth`, authRoutes);
-router.use(`${API_PREFIX}/movies`, movieRoutes);
+router.use('/health', healthRoutes);
+router.use('/auth', authRoutes);
+router.use('/movies', movieRoutes);
 
+// 將所有路由加上 API 前綴
+const prefixRouter = Router();
+prefixRouter.use(API_PREFIX, router);
 
-export default router;
+export default prefixRouter;

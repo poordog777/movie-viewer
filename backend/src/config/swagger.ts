@@ -12,7 +12,7 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: `http://localhost:${env.port}/api/v1`,
+      url: `http://localhost:${env.port}`,
       description: '開發環境'
     }
   ],
@@ -116,4 +116,4 @@ export const setupSwagger = (app: Express) => {
 
   // 設置 Swagger UI
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
-}; 
+};

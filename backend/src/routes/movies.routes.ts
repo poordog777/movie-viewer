@@ -70,4 +70,66 @@ const router = Router();
  */
 router.get('/popular', MovieController.getPopularMovies);
 
+/**
+ * @swagger
+ * /api/v1/movies/search:
+ *   get:
+ *     summary: 搜尋電影
+ *     tags: [Movies]
+ *     description: 根據關鍵字搜尋電影
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: 搜尋關鍵字
+ *         example: "蜘蛛人"
+ *     responses:
+ *       200:
+ *         description: 成功取得搜尋結果
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - movies
+ *                 - total
+ *               properties:
+ *                 movies:
+ *                   type: array
+ *                   description: 符合搜尋條件的電影列表
+ *                   items:
+ *                     type: object
+ *                     required:
+ *                       - id
+ *                       - title
+ *                       - posterPath
+ *                       - releaseDate
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         description: 電影 ID
+ *                         example: 634649
+ *                       title:
+ *                         type: string
+ *                         description: 電影標題
+ *                         example: "蜘蛛人：無家日"
+ *                       posterPath:
+ *                         type: string
+ *                         nullable: true
+ *                         description: 海報圖片路徑
+ *                         example: "/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg"
+ *                       releaseDate:
+ *                         type: string
+ *                         format: date
+ *                         description: 上映日期
+ *                         example: "2021-12-15"
+ *                 total:
+ *                   type: integer
+ *                   description: 搜尋結果總數
+ *                   example: 10
+ */
+router.get('/search', MovieController.searchMovies);
+
 export default router;

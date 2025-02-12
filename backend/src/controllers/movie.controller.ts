@@ -12,13 +12,42 @@ class MovieController {
       const result = await MovieService.getPopularMovies();
       res.json(result);
     } catch (error) {
-      // 如果是已知的應用程式錯誤，直接傳遞
       if (error instanceof AppError) {
         next(error);
         return;
       }
+      next(new AppError(
+        500,
+        'Internal server error',
+        ErrorCodes.INTERNAL_SERVER_ERROR
+      ));
+    }
+  }
 
-      // 其他未知錯誤，包裝為內部伺服器錯誤
+  /**
+   * 搜尋電影
+   * GET /movies/search?q=關鍵字
+   */
+  async searchMovies(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const query = req.query.q;
+      
+      // 驗證查詢參數
+      if (!query || typeof query !== 'string') {
+        throw new AppError(
+          400,
+          'Query parameter "q" is required',
+          ErrorCodes.INVALID_REQUEST_BODY
+        );
+      }
+
+      const result = await MovieService.searchMovies(query);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof AppError) {
+        next(error);
+        return;
+      }
       next(new AppError(
         500,
         'Internal server error',
