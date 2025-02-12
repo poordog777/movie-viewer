@@ -19,9 +19,9 @@
 |--------|----------|------|------|
 | GET | /auth/google | Google OAuth 登入入口 | 重定向至 Google 登入頁面 |
 | GET | /auth/google/callback | Google OAuth 回調（回傳 JWT） | { token: string } |
-| GET | /movies/popular | 取得近期熱門電影（按上映日期排序） | { movies: [{ id: number, title: string, poster_path: string, release_date: string, popularity: number }], total: number } |
-| GET | /movies/search?q=關鍵字 | 關鍵字搜尋電影 | { movies: [{ id: number, title: string, poster_path: string, release_date: string }], total: number } |
-| GET | /movies/:movieId | 取得電影詳細資訊（包含平均評分） | { id: number, title: string, overview: string, poster_path: string, release_date: string, popularity: number, vote_average: number, vote_count: number } |
+| GET | /movies/popular | 取得近期熱門電影（按上映日期排序） | { movies: [{ id: number, title: string, posterPath: string, releaseDate: string, popularity: number }], total: number } |
+| GET | /movies/search?q=關鍵字 | 關鍵字搜尋電影 | { movies: [{ id: number, title: string, posterPath: string, releaseDate: string }], total: number } |
+| GET | /movies/:movieId | 取得電影詳細資訊（包含平均評分） | { id: number, title: string, overview: string, posterPath: string, releaseDate: string, popularity: number, voteAverage: number, voteCount: number } |
 
 ### 🔒 需要 JWT 認證的 API
 用戶請求時需帶上 `Authorization: Bearer <JWT Token>`
@@ -39,7 +39,7 @@
 - [x] POST /auth/logout（登出）
 
 ### 第 2 階段：電影資料串接
-- [ ] GET /movies/popular（熱門電影，按上映日期排序）
+- [x] GET /movies/popular（熱門電影，按上映日期排序）
 - [ ] GET /movies/search?q=關鍵字（搜尋電影）
 - [ ] GET /movies/:movieId（電影詳細資訊，包含平均評分）
 

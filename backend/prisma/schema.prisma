@@ -44,9 +44,8 @@ model Movie {
   reviews   Review[]
 
   @@map("movies")
-  @@index([releaseDate])
-  @@index([popularity])
-  @@index([voteAverage])
+  @@index([releaseDate], name: "idx_movies_release_date")
+  @@index([popularity], name: "idx_movies_popularity")
 }
 
 // 評分
