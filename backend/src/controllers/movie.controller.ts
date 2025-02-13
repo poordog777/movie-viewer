@@ -26,22 +26,12 @@ class MovieController {
 
   /**
    * 搜尋電影
-   * GET /movies/search?q=關鍵字
+   * GET /movies/search?query=關鍵字
    */
   async searchMovies(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const query = req.query.q;
-      
-      // 驗證查詢參數
-      if (!query || typeof query !== 'string') {
-        throw new AppError(
-          400,
-          'Query parameter "q" is required',
-          ErrorCodes.INVALID_REQUEST_BODY
-        );
-      }
-
-      const result = await MovieService.searchMovies(query);
+      const { query } = req.query;
+      const result = await MovieService.searchMovies(query as string);
       res.json(result);
     } catch (error) {
       if (error instanceof AppError) {

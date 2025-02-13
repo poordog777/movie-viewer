@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import MovieController from '../controllers/movie.controller';
+import { validateRequest } from '../middleware/validator.middleware';
+import { movieValidators } from '../validators/movie.validator';
 
 const router = Router();
 
@@ -79,7 +81,7 @@ router.get('/popular', MovieController.getPopularMovies);
  *     description: 根據關鍵字搜尋電影
  *     parameters:
  *       - in: query
- *         name: q
+ *         name: query
  *         schema:
  *           type: string
  *         required: true
@@ -130,6 +132,6 @@ router.get('/popular', MovieController.getPopularMovies);
  *                   description: 搜尋結果總數
  *                   example: 10
  */
-router.get('/search', MovieController.searchMovies);
+router.get('/search', validateRequest(movieValidators.searchQuery, 'query'), MovieController.searchMovies);
 
 export default router;
