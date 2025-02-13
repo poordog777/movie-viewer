@@ -110,7 +110,7 @@ sequenceDiagram
         Frontend->>Backend: API 請求
     else 搜尋電影
         User->>Frontend: 搜尋關鍵字
-        Frontend->>Backend: 發送搜尋請求(帶關鍵字)
+        Frontend->>Backend: 發送搜尋請求(帶關鍵字和頁碼)
     end
 
     alt 熱門電影列表
@@ -132,7 +132,7 @@ sequenceDiagram
     alt 熱門電影列表
         Backend->>Frontend: 返回按上映日期排序的30部電影
     else 搜尋結果
-        Backend->>Frontend: 返回符合關鍵字的電影
+        Backend->>Frontend: 返回符合關鍵字的電影（含分頁資訊）
     else 電影詳情
         Backend->>Frontend: 返回單部電影詳情
     end

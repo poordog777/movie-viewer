@@ -30,14 +30,18 @@ interface SearchMovie {
   releaseDate: string;
 }
 
-interface MoviesResponse {
-  movies: Movie[];
-  total: number;
+interface MovieResponse {
+  page: number;
+  results: Movie[];
+  total_pages: number;
+  total_results: number;
 }
 
-interface SearchMoviesResponse {
-  movies: SearchMovie[];
-  total: number;
+interface SearchMovieResponse {
+  page: number;
+  results: SearchMovie[];
+  total_pages: number;
+  total_results: number;
 }
 
 class MovieService {
@@ -56,7 +60,7 @@ class MovieService {
   /**
    * 取得近期熱門電影（按上映日期排序）
    */
-  async getPopularMovies(): Promise<MoviesResponse> {
+  async getPopularMovies(): Promise<MovieResponse> {
     try {
       // 取得兩頁資料以確保有足夠的電影可以篩選
       const [page1, page2] = await Promise.all([
@@ -76,10 +80,14 @@ class MovieService {
       // 將電影資料快取到資料庫
       await this.cacheMovies(sortedMovies);
 
-      // 回傳符合 API 規格的資料
+      const results = sortedMovies.map(this.transformToMovie);
+      
+      // 回傳符合 TMDB API 規格的資料
       return {
-        movies: sortedMovies.map(this.transformToMovie),
-        total: sortedMovies.length
+        page: 1,
+        results,
+        total_pages: 1,
+        total_results: results.length
       };
     } catch (error) {
       console.error('Failed to fetch popular movies:', error);
@@ -94,9 +102,14 @@ class MovieService {
   /**
    * 搜尋電影
    */
-  async searchMovies(query: string): Promise<SearchMoviesResponse> {
+  async searchMovies(query: string, page: number = 1): Promise<SearchMovieResponse> {
     if (!query.trim()) {
-      return { movies: [], total: 0 };
+      return {
+        page,
+        results: [],
+        total_pages: 0,
+        total_results: 0
+      };
     }
 
     try {
@@ -107,7 +120,8 @@ class MovieService {
           query: query.trim(),
           language: 'zh-TW',
           region: 'TW',
-          include_adult: false  // 過濾成人內容
+          include_adult: false,  // 過濾成人內容
+          page: page
         }
       });
 
@@ -116,10 +130,12 @@ class MovieService {
       // 將搜尋結果快取到資料庫
       await this.cacheMovies(movies);
 
-      // 回傳符合 API 規格的資料
+      // 回傳符合 TMDB API 規格的資料
       return {
-        movies: movies.map(this.transformToSearchMovie),
-        total: response.data.total_results
+        page,
+        results: movies.map(this.transformToSearchMovie),
+        total_pages: response.data.total_pages,
+        total_results: response.data.total_results
       };
     } catch (error) {
       console.error('Failed to search movies:', error);

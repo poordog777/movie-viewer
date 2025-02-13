@@ -26,12 +26,15 @@ class MovieController {
 
   /**
    * 搜尋電影
-   * GET /movies/search?query=關鍵字
+   * GET /movies/search?query=關鍵字&page=1
    */
   async searchMovies(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { query } = req.query;
-      const result = await MovieService.searchMovies(query as string);
+      const { query, page } = req.query;
+      const result = await MovieService.searchMovies(
+        query as string,
+        Number(page)
+      );
       res.json(result);
     } catch (error) {
       if (error instanceof AppError) {
