@@ -21,27 +21,34 @@ model User {
 
   // 關聯
   ratings   Rating[]
-  reviews   Review[]
-  favorites Favorite[]
 
   @@map("users")
 }
 
 // 電影快取
 model Movie {
-  id          Int       @id // TMDB movie_id
-  title       String
-  overview    String?   @db.Text
-  posterPath  String?   @map("poster_path")
-  releaseDate DateTime? @map("release_date")
-  popularity  Float?
-  voteAverage Float?    @map("vote_average")
-  voteCount   Int?      @map("vote_count")
-  cachedAt    DateTime  @default(now()) @map("cached_at")
+  id               Int       @id // TMDB movie_id
+  title            String
+  originalTitle    String    @map("original_title")
+  originalLanguage String    @map("original_language")
+  overview         String?   @db.Text
+  tagline          String?
+  posterPath       String?   @map("poster_path")
+  backdropPath     String?   @map("backdrop_path")
+  releaseDate      DateTime? @map("release_date")
+  status           String?
+  runtime          Int?
+  budget           Int?
+  revenue          Int?
+  popularity       Float?
+  voteAverage      Float?    @map("vote_average")
+  voteCount        Int?      @map("vote_count")
+  adult            Boolean   @default(false)
+  video            Boolean   @default(false)
+  cachedAt         DateTime  @default(now()) @map("cached_at")
 
   // 關聯
   ratings   Rating[]
-  reviews   Review[]
 
   @@map("movies")
   @@index([releaseDate], name: "idx_movies_release_date")
@@ -65,34 +72,3 @@ model Rating {
   @@map("ratings")
 }
 
-// 評論
-model Review {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  movieId   Int      @map("movie_id")
-  content   String   @db.Text
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // 關聯
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  movie     Movie    @relation(fields: [movieId], references: [id])
-
-  @@unique([userId, movieId])
-  @@index([movieId, createdAt])
-  @@map("reviews")
-}
-
-// 收藏清單
-model Favorite {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  movieId   Int      @map("movie_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  // 關聯
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, movieId])
-  @@map("favorites")
-}

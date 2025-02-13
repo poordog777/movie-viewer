@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Movie as PrismaMovie } from '@prisma/client';
 import axios from 'axios';
 import { AppError, ErrorCodes } from '../types/error';
 
@@ -7,12 +7,22 @@ const prisma = new PrismaClient();
 interface TMDBMovie {
   id: number;
   title: string;
+  original_title: string;
+  original_language: string;
   poster_path: string | null;
+  backdrop_path: string | null;
   release_date: string;
   popularity: number;
   overview: string;
+  tagline?: string;
+  status?: string;
+  runtime?: number;
+  budget?: number;
+  revenue?: number;
   vote_average: number;
   vote_count: number;
+  adult: boolean;
+  video: boolean;
 }
 
 interface Movie {
@@ -29,20 +39,13 @@ interface SearchMovie {
   posterPath: string | null;
   releaseDate: string;
 }
-
-interface MovieResponse {
+interface PaginatedResponse<T> {
   page: number;
-  results: Movie[];
+  results: T[];
   total_pages: number;
   total_results: number;
 }
 
-interface SearchMovieResponse {
-  page: number;
-  results: SearchMovie[];
-  total_pages: number;
-  total_results: number;
-}
 
 class MovieService {
   private tmdbApiKey: string;
@@ -60,7 +63,7 @@ class MovieService {
   /**
    * 取得近期熱門電影（按上映日期排序）
    */
-  async getPopularMovies(): Promise<MovieResponse> {
+  async getPopularMovies(): Promise<PaginatedResponse<Movie>> {
     try {
       // 取得兩頁資料以確保有足夠的電影可以篩選
       const [page1, page2] = await Promise.all([
@@ -80,7 +83,7 @@ class MovieService {
       // 將電影資料快取到資料庫
       await this.cacheMovies(sortedMovies);
 
-      const results = sortedMovies.map(this.transformToMovie);
+      const results = sortedMovies.map(movie => this.transformToMovie(movie));
       
       // 回傳符合 TMDB API 規格的資料
       return {
@@ -102,7 +105,7 @@ class MovieService {
   /**
    * 搜尋電影
    */
-  async searchMovies(query: string, page: number = 1): Promise<SearchMovieResponse> {
+  async searchMovies(query: string, page: number = 1): Promise<PaginatedResponse<SearchMovie>> {
     if (!query.trim()) {
       return {
         page,
@@ -133,7 +136,7 @@ class MovieService {
       // 回傳符合 TMDB API 規格的資料
       return {
         page,
-        results: movies.map(this.transformToSearchMovie),
+        results: movies.map(movie => this.transformToSearchMovie(movie)),
         total_pages: response.data.total_pages,
         total_results: response.data.total_results
       };
@@ -181,23 +184,43 @@ class MovieService {
           where: { id: movie.id },
           update: {
             title: movie.title,
+            originalTitle: movie.original_title,
+            originalLanguage: movie.original_language,
             overview: movie.overview,
+            tagline: movie.tagline || null,
             posterPath: movie.poster_path,
-            releaseDate: new Date(movie.release_date),
+            backdropPath: movie.backdrop_path,
+            releaseDate: movie.release_date ? new Date(movie.release_date) : null,
+            status: movie.status || null,
+            runtime: movie.runtime || null,
+            budget: movie.budget || null,
+            revenue: movie.revenue || null,
             popularity: movie.popularity,
             voteAverage: movie.vote_average,
             voteCount: movie.vote_count,
+            adult: movie.adult || false,
+            video: movie.video || false,
             cachedAt: new Date()
           },
           create: {
             id: movie.id,
             title: movie.title,
+            originalTitle: movie.original_title,
+            originalLanguage: movie.original_language,
             overview: movie.overview,
+            tagline: movie.tagline || null,
             posterPath: movie.poster_path,
-            releaseDate: new Date(movie.release_date),
+            backdropPath: movie.backdrop_path,
+            releaseDate: movie.release_date ? new Date(movie.release_date) : null,
+            status: movie.status || null,
+            runtime: movie.runtime || null,
+            budget: movie.budget || null,
+            revenue: movie.revenue || null,
             popularity: movie.popularity,
             voteAverage: movie.vote_average,
-            voteCount: movie.vote_count
+            voteCount: movie.vote_count,
+            adult: movie.adult || false,
+            video: movie.video || false
           }
         })
       ));
