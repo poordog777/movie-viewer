@@ -92,50 +92,42 @@ sequenceDiagram
     Backend->>Frontend: 回傳 JWT Token
 ```
 
-### 2. 電影資訊處理流程
+### 2. 核心功能流程
 
 ```mermaid
 sequenceDiagram
-    participant User
     participant Frontend
     participant Backend
     participant DB
     participant TMDB
 
-    alt 熱門電影列表
-        User->>Frontend: 訪問主頁
-        Frontend->>Backend: 請求熱門電影
-    else 電影詳情
-        User->>Frontend: 點選熱門電影
-        Frontend->>Backend: API 請求
-    else 搜尋電影
-        User->>Frontend: 搜尋關鍵字
-        Frontend->>Backend: 發送搜尋請求(帶關鍵字和頁碼)
+    %% 熱門電影
+    Frontend->>Backend: 請求熱門電影
+    Backend->>DB: 檢查最高人氣電影的快取時間
+    alt 快取超過3小時
+        Backend->>TMDB: 請求熱門電影
+        TMDB->>Backend: 返回電影列表
+        Backend->>DB: 更新電影資料
     end
+    DB->>Backend: 返回電影列表
+    Backend->>Frontend: 返回熱門電影
 
-    alt 熱門電影列表
-        Backend->>TMDB: 請求近期熱門電影
-        TMDB->>Backend: 返回電影數據
-        Backend->>Backend: 按上映日期排序取前30部
-        Backend->>DB: 存入缺少的電影資料
-    else 其他查詢
-        Backend->>DB: 查詢 movies 表
-        alt movies 表中存在
-            DB->>Backend: 返回電影數據
-        else 不存在
-            Backend->>TMDB: 請求 TMDB API
-            TMDB->>Backend: 返回電影數據
-            Backend->>DB: 存入 movies 表
-        end
+    %% 搜尋電影
+    Frontend->>Backend: 搜尋電影
+    Backend->>TMDB: 發送搜尋請求
+    TMDB->>Backend: 返回搜尋結果
+    Backend->>Frontend: 返回搜尋結果
+
+    %% 電影詳情
+    Frontend->>Backend: 取得電影詳情
+    Backend->>DB: 查詢電影資料
+    alt DB中不存在
+        Backend->>TMDB: 請求電影詳情
+        TMDB->>Backend: 返回電影資料
+        Backend->>DB: 儲存電影資料
     end
-    
-    alt 熱門電影列表
-        Backend->>Frontend: 返回按上映日期排序的30部電影
-    else 搜尋結果
-        Backend->>Frontend: 返回符合關鍵字的電影（含分頁資訊）
-    else 電影詳情
-        Backend->>Frontend: 返回單部電影詳情
-    end
+    DB->>Backend: 返回電影詳情
+    Backend->>Frontend: 返回詳情資料
 ```
 
 ### 4. 用戶評分流程
@@ -200,5 +192,7 @@ sequenceDiagram
    - 資料庫索引：
      * movies 表：release_date、popularity 索引
      * ratings 表：user_movie、movie_score 複合索引
-   - 本地快取：使用 movies 表存儲電影資訊，減少 TMDB API 調用
+   - 本地快取策略：
+     * Popular API：檢查最高人氣電影的快取時間，每3小時更新一次
+     * Movie Details API：僅在資料庫無該電影時調用 TMDB API
    - API 響應壓縮：減少傳輸大小
