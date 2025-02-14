@@ -25,34 +25,33 @@ model User {
   @@map("users")
 }
 
-// 電影快取
+// 電影快取（對齊 TMDB API）
 model Movie {
+  // 必填欄位（首頁展示用）
   id               Int       @id // TMDB movie_id
   title            String
-  originalTitle    String    @map("original_title")
-  originalLanguage String    @map("original_language")
+  posterPath       String    @map("poster_path")
+  releaseDate      String    @map("release_date")
+  popularity       Float
+  cachedAt         DateTime  @default(now()) @map("cached_at")
+
+  // 選填欄位
+  originalTitle    String?   @map("original_title")
+  originalLanguage String?   @map("original_language")
   overview         String?   @db.Text
-  tagline          String?
-  posterPath       String?   @map("poster_path")
   backdropPath     String?   @map("backdrop_path")
-  releaseDate      DateTime? @map("release_date")
-  status           String?
-  runtime          Int?
-  budget           Int?
-  revenue          Int?
-  popularity       Float?
   voteAverage      Float?    @map("vote_average")
   voteCount        Int?      @map("vote_count")
-  adult            Boolean   @default(false)
-  video            Boolean   @default(false)
-  cachedAt         DateTime  @default(now()) @map("cached_at")
+  adult            Boolean?  @default(false)
+  video            Boolean?  @default(false)
+  genreIds         Int[]     @map("genre_ids")
 
   // 關聯
   ratings   Rating[]
 
   @@map("movies")
-  @@index([releaseDate], name: "idx_movies_release_date")
   @@index([popularity], name: "idx_movies_popularity")
+  @@index([title], name: "idx_movies_title")
 }
 
 // 評分
@@ -71,4 +70,3 @@ model Rating {
   @@index([movieId, score])
   @@map("ratings")
 }
-

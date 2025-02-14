@@ -1,43 +1,54 @@
-import { PrismaClient, Movie as PrismaMovie } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
 import { AppError, ErrorCodes } from '../types/error';
+import { MOVIE_GENRES, getGenreNames } from '../utils/movie-genres';
 
 const prisma = new PrismaClient();
 
+// TMDB API 回傳格式
 interface TMDBMovie {
+  // 必填欄位
   id: number;
   title: string;
-  original_title: string;
-  original_language: string;
-  poster_path: string | null;
-  backdrop_path: string | null;
+  poster_path: string;
   release_date: string;
   popularity: number;
-  overview: string;
-  tagline?: string;
-  status?: string;
-  runtime?: number;
-  budget?: number;
-  revenue?: number;
-  vote_average: number;
-  vote_count: number;
+
+  // 選填欄位
+  original_title: string | null;
+  original_language: string | null;
+  overview: string | null;
+  backdrop_path: string | null;
+  vote_average: number | null;
+  vote_count: number | null;
   adult: boolean;
   video: boolean;
+  genre_ids: number[];
 }
 
-interface Movie {
+// TMDB API 回傳的分頁格式
+interface TMDBResponse {
+  page: number;
+  results: TMDBMovie[];
+  total_pages: number;
+  total_results: number;
+}
+
+// 首頁電影格式
+interface PopularMovie {
   id: number;
   title: string;
-  posterPath: string | null;
+  posterPath: string;
   releaseDate: string;
   popularity: number;
 }
 
+// 搜尋結果電影格式
 interface SearchMovie {
   id: number;
   title: string;
   originalTitle: string;
-  posterPath: string | null;
+  posterPath: string;
   releaseDate: string;
 }
 
@@ -48,10 +59,10 @@ interface PaginatedResponse<T> {
   total_results: number;
 }
 
-
 class MovieService {
   private tmdbApiKey: string;
   private tmdbBaseUrl: string;
+  private CACHE_DURATION = 3 * 60 * 60 * 1000; // 3小時的毫秒數
 
   constructor() {
     this.tmdbApiKey = process.env.TMDB_API_KEY || '';
@@ -63,31 +74,31 @@ class MovieService {
   }
 
   /**
-   * 取得近期熱門電影（按上映日期排序）
+   * 取得近期熱門電影
    */
-  async getPopularMovies(): Promise<PaginatedResponse<Movie>> {
+  async getPopularMovies(): Promise<PaginatedResponse<PopularMovie>> {
     try {
-      // 取得兩頁資料以確保有足夠的電影可以篩選
-      const [page1, page2] = await Promise.all([
-        this.fetchTMDBPopularMovies(1),
-        this.fetchTMDBPopularMovies(2)
-      ]);
+      // 1. 檢查快取
+      const { isExpired, movies } = await this.checkCache();
 
-      // 合併兩頁的電影資料
-      const allMovies = [...page1.results, ...page2.results];
+      // 2. 如果快取有效，直接返回
+      if (!isExpired && movies.length > 0) {
+        return {
+          page: 1,
+          results: movies,
+          total_pages: 1,
+          total_results: movies.length
+        };
+      }
 
-      // 過濾掉沒有上映日期的電影，並按上映日期排序
-      const sortedMovies = allMovies
-        .filter(movie => movie.release_date)
-        .sort((a, b) => new Date(b.release_date).getTime() - new Date(a.release_date).getTime())
-        .slice(0, 30);  // 取前 30 部
+      // 3. 快取過期，從 TMDB 獲取新資料
+      const response = await this.fetchTMDBPopularMovies();
+      const validMovies = this.filterValidMovies(response.results);
 
-      // 將電影資料快取到資料庫
-      await this.cacheMovies(sortedMovies);
+      // 4. 更新快取並返回結果
+      await this.cacheMovies(validMovies);
+      const results = validMovies.map(this.transformToPopularMovie);
 
-      const results = sortedMovies.map(movie => this.transformToMovie(movie));
-      
-      // 回傳符合 TMDB API 規格的資料
       return {
         page: 1,
         results,
@@ -118,27 +129,46 @@ class MovieService {
     }
 
     try {
-      // 從 TMDB 搜尋電影
-      const response = await axios.get(`${this.tmdbBaseUrl}/search/movie`, {
+      // 1. 從 TMDB 搜尋電影
+      const response = await axios.get<TMDBResponse>(`${this.tmdbBaseUrl}/search/movie`, {
         params: {
           api_key: this.tmdbApiKey,
           query: query.trim(),
           language: 'zh-TW',
           region: 'TW',
-          include_adult: false,  // 過濾成人內容
+          include_adult: false,
           page: page
         }
       });
 
-      const movies = response.data.results as TMDBMovie[];
+      const movies = response.data.results;
 
-      // 將搜尋結果快取到資料庫
-      await this.cacheMovies(movies);
+      // 2. 過濾有效的電影資料
+      const validMovies = movies.filter(movie =>
+        typeof movie.id === 'number' &&
+        movie.title &&
+        movie.original_title &&
+        movie.poster_path &&
+        movie.release_date &&
+        typeof movie.popularity === 'number'
+      ) as TMDBMovie[];
 
-      // 回傳符合 TMDB API 規格的資料
+      // 3. 存到 DB 做為紀錄
+      await this.cacheMovies(validMovies);
+
+      // 4. 轉換成搜尋結果格式
+      const results = validMovies.map(movie => ({
+        id: movie.id,
+        title: movie.title,
+        originalTitle: movie.original_title!,
+        posterPath: movie.poster_path,
+        releaseDate: movie.release_date
+      }));
+
+      // 4. 返回結果
       return {
-        page,
-        results: movies.map(movie => this.transformToSearchMovie(movie)),
+        page: response.data.page,
+        results,
         total_pages: response.data.total_pages,
         total_results: response.data.total_results
       };
@@ -153,21 +183,56 @@ class MovieService {
   }
 
   /**
+   * 檢查快取狀態並返回快取的電影
+   */
+  private async checkCache(): Promise<{ isExpired: boolean; movies: PopularMovie[] }> {
+    // 檢查最新快取時間
+    const mostRecent = await prisma.movie.findFirst({
+      orderBy: { cachedAt: 'desc' }
+    });
+
+    const isExpired = !mostRecent?.cachedAt ||
+      (new Date().getTime() - mostRecent.cachedAt.getTime() > this.CACHE_DURATION);
+
+    if (isExpired) {
+      return { isExpired: true, movies: [] };
+    }
+
+    // 取得快取的熱門電影
+    const movies = await prisma.movie.findMany({
+      select: {
+        id: true,
+        title: true,
+        posterPath: true,
+        releaseDate: true,
+        popularity: true,
+      },
+      orderBy: { popularity: 'desc' },
+      take: 30
+    });
+
+    return {
+      isExpired: false,
+      movies
+    };
+  }
+
+  /**
    * 從 TMDB API 取得熱門電影
    */
-  private async fetchTMDBPopularMovies(page: number) {
+  private async fetchTMDBPopularMovies(): Promise<TMDBResponse> {
     try {
-      const response = await axios.get(`${this.tmdbBaseUrl}/movie/popular`, {
+      const response = await axios.get<TMDBResponse>(`${this.tmdbBaseUrl}/movie/popular`, {
         params: {
           api_key: this.tmdbApiKey,
           language: 'zh-TW',
-          page,
+          page: 1,
           region: 'TW'
         }
       });
       return response.data;
     } catch (error) {
-      console.error(`Failed to fetch TMDB popular movies page ${page}:`, error);
+      console.error('Failed to fetch TMDB popular movies:', error);
       throw new AppError(
         500,
         'Failed to fetch movies from TMDB',
@@ -177,55 +242,65 @@ class MovieService {
   }
 
   /**
-   * 將電影資料快取到資料庫
+   * 過濾出有效的電影資料
+   */
+  private filterValidMovies(movies: TMDBMovie[]): TMDBMovie[] {
+    return movies
+      .slice(0, 50) // 先取前50部
+      .filter(movie =>
+        typeof movie.id === 'number' &&
+        movie.title &&
+        movie.poster_path &&
+        movie.release_date &&
+        typeof movie.popularity === 'number'
+      )
+      .slice(0, 30); // 最後只要30部
+  }
+
+  /**
+   * 轉換成首頁需要的格式
+   */
+  private transformToPopularMovie(movie: TMDBMovie): PopularMovie {
+    return {
+      id: movie.id,
+      title: movie.title,
+      posterPath: movie.poster_path,  // 移除 ! 因為已經在 filter 中確保存在
+      releaseDate: movie.release_date,
+      popularity: movie.popularity
+    };
+  }
+
+  /**
+   * 將電影資料存入資料庫
    */
   private async cacheMovies(movies: TMDBMovie[]): Promise<void> {
     try {
-      await Promise.all(movies.map(movie => 
-        prisma.movie.upsert({
+      const now = new Date();
+      await Promise.all(movies.map(movie => {
+        const movieData = {
+          id: movie.id,
+          title: movie.title,
+          posterPath: movie.poster_path,
+          releaseDate: movie.release_date,
+          popularity: movie.popularity,
+          originalTitle: movie.original_title || undefined,
+          originalLanguage: movie.original_language || undefined,
+          overview: movie.overview || undefined,
+          backdropPath: movie.backdrop_path || undefined,
+          voteAverage: movie.vote_average || undefined,
+          voteCount: movie.vote_count || undefined,
+          adult: movie.adult || false,
+          video: movie.video || false,
+          genreIds: movie.genre_ids,
+          cachedAt: now
+        };
+
+        return prisma.movie.upsert({
           where: { id: movie.id },
-          update: {
-            title: movie.title,
-            originalTitle: movie.original_title,
-            originalLanguage: movie.original_language,
-            overview: movie.overview,
-            tagline: movie.tagline || null,
-            posterPath: movie.poster_path,
-            backdropPath: movie.backdrop_path,
-            releaseDate: movie.release_date ? new Date(movie.release_date) : null,
-            status: movie.status || null,
-            runtime: movie.runtime || null,
-            budget: movie.budget || null,
-            revenue: movie.revenue || null,
-            popularity: movie.popularity,
-            voteAverage: movie.vote_average,
-            voteCount: movie.vote_count,
-            adult: movie.adult || false,
-            video: movie.video || false,
-            cachedAt: new Date()
-          },
-          create: {
-            id: movie.id,
-            title: movie.title,
-            originalTitle: movie.original_title,
-            originalLanguage: movie.original_language,
-            overview: movie.overview,
-            tagline: movie.tagline || null,
-            posterPath: movie.poster_path,
-            backdropPath: movie.backdrop_path,
-            releaseDate: movie.release_date ? new Date(movie.release_date) : null,
-            status: movie.status || null,
-            runtime: movie.runtime || null,
-            budget: movie.budget || null,
-            revenue: movie.revenue || null,
-            popularity: movie.popularity,
-            voteAverage: movie.vote_average,
-            voteCount: movie.vote_count,
-            adult: movie.adult || false,
-            video: movie.video || false
-          }
-        })
-      ));
+          update: movieData,
+          create: movieData
+        });
+      }));
     } catch (error) {
       console.error('Failed to cache movies:', error);
       throw new AppError(
@@ -234,32 +309,6 @@ class MovieService {
         ErrorCodes.DATABASE_ERROR
       );
     }
-  }
-
-  /**
-   * 將 TMDB 電影資料轉換為標準格式（用於熱門電影列表）
-   */
-  private transformToMovie(movie: TMDBMovie): Movie {
-    return {
-      id: movie.id,
-      title: movie.title,
-      posterPath: movie.poster_path,
-      releaseDate: movie.release_date,
-      popularity: movie.popularity
-    };
-  }
-
-  /**
-   * 將 TMDB 電影資料轉換為搜尋結果格式
-   */
-  private transformToSearchMovie(movie: TMDBMovie): SearchMovie {
-    return {
-      id: movie.id,
-      title: movie.title,
-      originalTitle: movie.original_title,
-      posterPath: movie.poster_path,
-      releaseDate: movie.release_date
-    };
   }
 }
 
