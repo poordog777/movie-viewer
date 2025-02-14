@@ -20,7 +20,7 @@
 | GET | /auth/google | Google OAuth 登入入口 | 重定向至 Google 登入頁面 |
 | GET | /auth/google/callback | Google OAuth 回調（回傳 JWT） | { token: string } |
 | GET | /movies/popular | 取得近期熱門電影（每3小時更新） | { page: number, results: [{ id: number, title: string, posterPath: string, releaseDate: string, popularity: number }], total_pages: number, total_results: number } |
-| GET | /movies/search?query=關鍵字&page=1 | 關鍵字搜尋電影 | { page: number, results: [{ id: number, title: string, posterPath: string, releaseDate: string }], total_pages: number, total_results: number } |
+| GET | /movies/search?query=關鍵字&page=1 | 關鍵字搜尋電影 | { page: number, results: [{ id: number, title: string, originalTitle: string, posterPath: string, releaseDate: string }], total_pages: number, total_results: number } |
 | GET | /movies/:movieId | 取得電影詳細資訊（包含平均評分） | { id: number, title: string, overview: string, posterPath: string, releaseDate: string, popularity: number, voteAverage: number, voteCount: number } |
 
 ### 🔒 需要 JWT 認證的 API

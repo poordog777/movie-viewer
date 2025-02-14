@@ -132,6 +132,7 @@ router.get('/popular', MovieController.getPopularMovies);
  *                     required:
  *                       - id
  *                       - title
+ *                       - originalTitle
  *                       - posterPath
  *                       - releaseDate
  *                     properties:
@@ -141,8 +142,12 @@ router.get('/popular', MovieController.getPopularMovies);
  *                         example: 634649
  *                       title:
  *                         type: string
- *                         description: 電影標題
+ *                         description: 電影標題（國語）
  *                         example: "蜘蛛人：無家日"
+ *                       originalTitle:
+ *                         type: string
+ *                         description: 原始標題
+ *                         example: "Spider-Man: No Way Home"
  *                       posterPath:
  *                         type: string
  *                         nullable: true

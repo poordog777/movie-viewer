@@ -36,9 +36,11 @@ interface Movie {
 interface SearchMovie {
   id: number;
   title: string;
+  originalTitle: string;
   posterPath: string | null;
   releaseDate: string;
 }
+
 interface PaginatedResponse<T> {
   page: number;
   results: T[];
@@ -254,6 +256,7 @@ class MovieService {
     return {
       id: movie.id,
       title: movie.title,
+      originalTitle: movie.original_title,
       posterPath: movie.poster_path,
       releaseDate: movie.release_date
     };
