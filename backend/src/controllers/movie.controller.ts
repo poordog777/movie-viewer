@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import MovieService from '../services/movie.service';
 import { AppError, ErrorCodes } from '../types/error';
+import type { User } from '@prisma/client';
 
 class MovieController {
   /**
@@ -58,6 +59,35 @@ class MovieController {
       const movieId = Number(req.params.movieId);
       const movie = await MovieService.getMovieById(movieId);
       res.json(movie);
+    } catch (error) {
+      if (error instanceof AppError) {
+        next(error);
+        return;
+      }
+      next(new AppError(
+        500,
+        'Internal server error',
+        ErrorCodes.INTERNAL_SERVER_ERROR
+      ));
+    }
+  }
+
+  /**
+   * 評分電影
+   * POST /movies/:movieId/rating
+   */
+  async rateMovie(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const movieId = Number(req.params.movieId);
+      const userId = (req.user as User).id;
+      const { score } = req.body;
+
+      const result = await MovieService.rateMovie(movieId, userId, score);
+      
+      res.json({
+        message: '評分成功',
+        data: result
+      });
     } catch (error) {
       if (error instanceof AppError) {
         next(error);

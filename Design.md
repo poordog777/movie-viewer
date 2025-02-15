@@ -26,10 +26,10 @@
 ### 🔒 需要 JWT 認證的 API
 用戶請求時需帶上 `Authorization: Bearer <JWT Token>`
 
-| Method | Endpoint | 說明 | 回應 |
+| Method | Endpoint | 說明 | 請求/回應 |
 |--------|----------|------|------|
 | POST | /auth/logout | 登出 | { message: string } |
-| POST | /movies/:movieId/rating | 評分電影（1~10分）| { message: string } |
+| POST | /movies/:movieId/rating | 評分電影（1~10分）| Request Body: { score: number }<br>Response: { message: string, data: { movieId: number, score: number, averageScore: number, totalVotes: number } } |
 
 ## 開發順序
 
@@ -44,4 +44,4 @@
 - [x] GET /movies/:movieId（電影詳細資訊，包含平均評分）
 
 ### 第 3 階段：評分功能（需驗證 JWT）
-- [ ] POST /movies/:movieId/rating（評分電影）
+- [x] POST /movies/:movieId/rating（評分電影）

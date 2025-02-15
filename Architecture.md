@@ -29,7 +29,7 @@ CREATE TABLE users (
 ```
 
 #### 2. Movies 表
-電影基本資訊快取
+電影資訊與評分數據
 ```sql
 CREATE TABLE movies (
     id              INTEGER PRIMARY KEY,  -- TMDB movie_id
@@ -40,36 +40,29 @@ CREATE TABLE movies (
     popularity      FLOAT,
     vote_average    FLOAT,
     vote_count      INTEGER,
+    user_votes      JSONB DEFAULT '{}',  -- 格式：{ "userId": score }
     cached_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_movies_release_date ON movies(release_date);
 CREATE INDEX idx_movies_popularity ON movies(popularity);
+CREATE INDEX idx_movies_title ON movies(title);
 ```
 
-#### 3. Ratings 表
-用戶對電影的評分
-```sql
-CREATE TABLE ratings (
-    id          SERIAL PRIMARY KEY,
-    user_id     INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    movie_id    INTEGER NOT NULL,
-    score       SMALLINT NOT NULL,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT rating_score_range CHECK (score >= 1 AND score <= 10),
-    UNIQUE(user_id, movie_id)
-);
+### 資料設計說明
 
-CREATE INDEX idx_ratings_user_movie ON ratings(user_id, movie_id);
-CREATE INDEX idx_ratings_movie_score ON ratings(movie_id, score);
-```
+1. 電影評分機制
+   * 評分儲存：使用 JSONB 類型的 user_votes 欄位儲存用戶評分
+   * 格式：`{ "userId": score }`，score 為 1-10 的整數
+   * 優點：
+     - 簡化資料結構，無需額外的評分表
+     - 一次操作即可完成評分更新
+     - 容易擴展（可添加時間戳等額外資訊）
 
-### 資料關係設計
-
-1. User - Rating 關係
-   - 一對多關係
-   - CASCADE DELETE
-   - 唯一約束確保一個用戶只能對一部電影評分一次
+2. 效能考慮
+   * 使用 JSONB 類型支援索引和高效查詢
+   * 評分更新為原子操作，減少資料庫負擔
+   * 適合讀多寫少的評分場景
 
 ## 核心功能流程
 
@@ -130,7 +123,7 @@ sequenceDiagram
     Backend->>Frontend: 返回詳情資料
 ```
 
-### 4. 用戶評分流程
+### 3. 用戶評分流程
 
 ```mermaid
 sequenceDiagram
@@ -142,9 +135,9 @@ sequenceDiagram
     User->>Frontend: 提交評分(1-10分)
     Frontend->>Backend: POST 評分請求（帶JWT）
     Backend->>Backend: 驗證JWT
-    Backend->>DB: 儲存評分
-    DB->>Backend: 確認儲存成功
-    Backend->>Frontend: 返回成功訊息
+    Backend->>DB: 更新 movies.user_votes
+    DB->>Backend: 確認更新成功
+    Backend->>Frontend: 返回更新後的評分統計
 ```
 
 ## 技術選擇說明
@@ -179,8 +172,8 @@ sequenceDiagram
 4. 資料庫選擇
    - PostgreSQL：
      * 用戶數據：強一致性需求
-     * 評分數據：關聯式查詢
      * 電影資訊快取：減少 API 調用
+     * JSONB 支援：高效能的評分數據儲存
 
 5. 安全性考慮
    - JWT + OAuth：安全的身份驗證
@@ -190,8 +183,7 @@ sequenceDiagram
 
 6. 效能優化
    - 資料庫索引：
-     * movies 表：release_date、popularity 索引
-     * ratings 表：user_movie、movie_score 複合索引
+     * movies 表：release_date、popularity、title 索引
    - 本地快取策略：
      * Popular API：檢查最高人氣電影的快取時間，每3小時更新一次
      * Movie Details API：僅在資料庫無該電影時調用 TMDB API

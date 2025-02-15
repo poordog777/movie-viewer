@@ -3,99 +3,28 @@ import swaggerJSDoc from 'swagger-jsdoc';
 import { Express } from 'express';
 import { env } from './env';
 
-const swaggerDefinition = {
-  openapi: '3.0.0',
-  info: {
-    title: 'Movie Viewer API',
-    version: '1.0.0',
-    description: '電影評論平台 API 文檔'
-  },
-  servers: [
-    {
-      url: `http://localhost:${env.port}`,
-      description: '開發環境'
-    }
-  ],
-  components: {
-    schemas: {
-      Error: {
-        type: 'object',
-        properties: {
-          status: {
-            type: 'string',
-            enum: ['error', 'fail'],
-            example: 'error'
-          },
-          message: {
-            type: 'string',
-            example: '伺服器內部錯誤'
-          }
-        }
-      },
-      ApiResponse: {
-        type: 'object',
-        properties: {
-          status: {
-            type: 'string',
-            enum: ['success', 'error', 'fail'],
-            example: 'success'
-          },
-          message: {
-            type: 'string',
-            example: '操作成功'
-          },
-          data: {
-            type: 'object',
-            example: null
-          },
-          meta: {
-            type: 'object',
-            properties: {
-              page: {
-                type: 'number',
-                example: 1
-              },
-              limit: {
-                type: 'number',
-                example: 10
-              },
-              total: {
-                type: 'number',
-                example: 100
-              }
-            }
-          }
-        }
-      }
-    },
-    responses: {
-      ServerError: {
-        description: '伺服器錯誤',
-        content: {
-          'application/json': {
-            schema: {
-              $ref: '#/components/schemas/Error'
-            }
-          }
-        }
-      }
-    },
-    securitySchemes: {
-      bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: '請在 Headers 中加入 Bearer Token'
-      }
-    }
-  }
-};
-
 const options = {
-  swaggerDefinition,
+  swaggerDefinition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Movie Viewer API',
+      version: '1.0.0',
+      description: '電影評論平台 API 文檔'
+    },
+    servers: [
+      {
+        url: `http://localhost:${env.port}`,
+        description: '開發環境'
+      },
+      {
+        url: env.apiUrl || 'https://api.movieviewer.example.com',
+        description: '生產環境'
+      }
+    ]
+  },
   apis: [
-    './src/routes/*.ts',
-    './src/docs/*.ts'  // 加入這行以載入所有文檔定義
+    './src/routes/*.ts',  // API 路由定義
+    './src/docs/*.ts'     // Swagger 元件定義
   ]
 };
 
@@ -104,8 +33,8 @@ const swaggerSpec = swaggerJSDoc(options);
 export const setupSwagger = (app: Express) => {
   // Swagger UI 選項
   const swaggerUiOptions = {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Movie Viewer API Documentation'
+    customCss: '.swagger-ui .topbar { display: none }',  // 隱藏頂部橫條
+    customSiteTitle: 'Movie Viewer API 文檔'
   };
 
   // 提供 swagger.json

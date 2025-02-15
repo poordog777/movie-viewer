@@ -31,5 +31,24 @@ export const movieValidators = {
       .positive()
       .required()
       .description('電影ID')
+  }),
+
+  /**
+   * 電影評分參數驗證
+   */
+  movieRating: Joi.object({
+    score: Joi.number()
+      .integer()
+      .min(1)
+      .max(10)
+      .required()
+      .messages({
+        'number.base': '評分必須是數字',
+        'number.integer': '評分必須是整數',
+        'number.min': '評分不能小於 1 分',
+        'number.max': '評分不能超過 10 分',
+        'any.required': '請提供評分'
+      })
+      .description('評分(1-10分)')
   })
 };

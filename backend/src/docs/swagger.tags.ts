@@ -2,17 +2,9 @@
  * @swagger
  * tags:
  *   - name: Health
- *     description: 健康檢查相關 API
+ *     description: 健康檢查 API（服務狀態監控）
  *   - name: Auth
- *     description: 認證相關 API
- *   - name: Users
- *     description: 使用者相關 API
+ *     description: 認證相關 API（Google OAuth登入、登出）
  *   - name: Movies
- *     description: 電影相關 API
- *   - name: Reviews
- *     description: 評論相關 API
- *   - name: Ratings
- *     description: 評分相關 API
- *   - name: Favorites
- *     description: 收藏相關 API
- */ 
+ *     description: 電影相關 API（瀏覽、搜尋、評分）
+*/

@@ -14,8 +14,17 @@ export const errorHandler = (
     errorCode: ErrorCodes.INTERNAL_SERVER_ERROR
   };
 
+  // 處理 JSON 解析錯誤
+  if (err instanceof SyntaxError && 'body' in err) {
+    statusCode = 400;
+    errorResponse = {
+      status: 'fail',
+      message: 'JSON 格式錯誤',
+      errorCode: ErrorCodes.INVALID_REQUEST_BODY
+    };
+  }
   // 處理已知的操作錯誤
-  if (err instanceof AppError) {
+  else if (err instanceof AppError) {
     statusCode = err.statusCode;
     errorResponse = {
       status: statusCode >= 500 ? 'error' : 'fail',

@@ -461,6 +461,77 @@ class MovieService {
     }
   }
 
+  /**
+   * 評分電影
+   */
+  async rateMovie(movieId: number, userId: number, score: number): Promise<{
+    movieId: number;
+    score: number;
+    averageScore: number;
+    totalVotes: number;
+  }> {
+    try {
+      // 1. 檢查電影是否存在
+      const movie = await prisma.movie.findUnique({
+        where: { id: movieId }
+      });
+
+      if (!movie) {
+        throw new AppError(404, '電影不存在', ErrorCodes.MOVIE_NOT_FOUND);
+      }
+
+      // 2. 解析目前的評分數據
+      const userVotes = movie.userVotes as Record<string, number>;
+      const oldScore = userVotes[userId];
+      const isNewVote = !oldScore;
+
+      // 3. 計算新的評分統計
+      let newVoteCount = movie.voteCount || 0;
+      let newVoteAverage = movie.voteAverage || 0;
+
+      if (isNewVote) {
+        // 新評分
+        newVoteCount++;
+        newVoteAverage = ((newVoteAverage * (newVoteCount - 1)) + score) / newVoteCount;
+      } else {
+        // 更新評分
+        newVoteAverage = ((newVoteAverage * newVoteCount) - oldScore + score) / newVoteCount;
+      }
+
+      // 4. 更新電影資料
+      const updatedMovie = await prisma.movie.update({
+        where: { id: movieId },
+        data: {
+          userVotes: {
+            ...userVotes,
+            [userId]: score
+          },
+          voteAverage: newVoteAverage,
+          voteCount: newVoteCount
+        }
+      });
+
+      // 5. 返回更新後的數據
+      return {
+        movieId: updatedMovie.id,
+        score,
+        averageScore: updatedMovie.voteAverage || 0,
+        totalVotes: updatedMovie.voteCount || 0
+      };
+
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      console.error('Failed to rate movie:', error);
+      throw new AppError(
+        500,
+        'Failed to rate movie',
+        ErrorCodes.MOVIE_UPDATE_FAILED
+      );
+    }
+  }
+
   private async cacheMovies(movies: TMDBMovie[]): Promise<void> {
     try {
       const now = new Date();

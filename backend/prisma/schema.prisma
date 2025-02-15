@@ -19,9 +19,6 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // 關聯
-  ratings   Rating[]
-
   @@map("users")
 }
 
@@ -61,28 +58,11 @@ model Movie {
   productionCountries Json?   @map("production_countries")
   spokenLanguages    Json?   @map("spoken_languages")
   originCountry      String[] @map("origin_country")
-
-  // 關聯
-  ratings   Rating[]
+  
+  // 評分相關
+  userVotes        Json      @default("{}") @map("user_votes")  // 格式：{ "userId": score }
 
   @@map("movies")
   @@index([popularity], name: "idx_movies_popularity")
   @@index([title], name: "idx_movies_title")
-}
-
-// 評分
-model Rating {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  movieId   Int      @map("movie_id")
-  score     Int      
-  createdAt DateTime @default(now()) @map("created_at")
-
-  // 關聯
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  movie     Movie    @relation(fields: [movieId], references: [id])
-
-  @@unique([userId, movieId])
-  @@index([movieId, score])
-  @@map("ratings")
 }
