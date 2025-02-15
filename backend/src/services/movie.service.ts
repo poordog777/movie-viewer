@@ -24,6 +24,43 @@ interface TMDBMovie {
   adult: boolean;
   video: boolean;
   genre_ids: number[];
+
+  // 電影詳情選填欄位
+  budget?: number;
+  revenue?: number;
+  runtime?: number;
+  homepage?: string;
+  imdb_id?: string;
+  status?: string;
+  tagline?: string;
+  genres?: Array<{
+    id: number;
+    name: string;
+  }>;
+
+  // 複雜資料結構
+  belongs_to_collection?: {
+    id: number;
+    name: string;
+    poster_path: string;
+    backdrop_path: string;
+  } | null;
+  production_companies?: {
+    id: number;
+    logo_path: string;
+    name: string;
+    origin_country: string;
+  }[];
+  production_countries?: {
+    iso_3166_1: string;
+    name: string;
+  }[];
+  spoken_languages?: {
+    english_name: string;
+    iso_639_1: string;
+    name: string;
+  }[];
+  origin_country?: string[];
 }
 
 // TMDB API 回傳的分頁格式
@@ -57,6 +94,25 @@ interface PaginatedResponse<T> {
   results: T[];
   total_pages: number;
   total_results: number;
+}
+
+// 電影詳情格式
+interface MovieDetail {
+  id: number;
+  title: string;
+  originalTitle: string;
+  originalLanguage: string;
+  overview: string;
+  tagline: string;
+  posterPath: string;
+  releaseDate: string;
+  runtime: number;
+  genres: { id: number; name: string; }[];
+  popularity: number;
+  voteAverage: number;
+  voteCount: number;
+  budget: number;
+  revenue: number;
 }
 
 class MovieService {
@@ -271,27 +327,199 @@ class MovieService {
   }
 
   /**
-   * 將電影資料存入資料庫
+   * 轉換成電影詳情格式
    */
+  private transformToMovieDetail(movie: TMDBMovie | any): MovieDetail {
+    // 從 TMDB API
+    if ('poster_path' in movie) {
+      const genres = movie.genres || [];
+      return {
+        // 基本資訊
+        id: movie.id,
+        title: movie.title,
+        originalTitle: movie.original_title || '',
+        originalLanguage: movie.original_language || '',
+        overview: movie.overview || '',
+        tagline: movie.tagline || '',
+        
+        // 視覺元素
+        posterPath: movie.poster_path,
+        
+        // 時間與分類資訊
+        releaseDate: movie.release_date,
+        runtime: movie.runtime || 0,
+        genres: genres.map((g: { id: number; name: string }) => ({
+          id: g.id,
+          name: g.name
+        })),
+        
+        // 統計數據
+        popularity: movie.popularity,
+        voteAverage: movie.vote_average || 0,
+        voteCount: movie.vote_count || 0,
+        
+        // 製作資訊
+        budget: movie.budget || 0,
+        revenue: movie.revenue || 0
+      };
+    }
+    
+    // 從資料庫
+    return {
+      // 基本資訊
+      id: movie.id,
+      title: movie.title,
+      originalTitle: movie.originalTitle || '',
+      originalLanguage: movie.originalLanguage || '',
+      overview: movie.overview || '',
+      tagline: movie.tagline || '',
+      
+      // 視覺元素
+      posterPath: movie.posterPath,
+      
+      // 時間與分類資訊
+      releaseDate: movie.releaseDate,
+      runtime: movie.runtime || 0,
+      genres: movie.genres || [],
+      
+      // 統計數據
+      popularity: movie.popularity,
+      voteAverage: movie.voteAverage || 0,
+      voteCount: movie.voteCount || 0,
+      
+      // 製作資訊
+      budget: movie.budget || 0,
+      revenue: movie.revenue || 0
+    };
+  }
+
+  /**
+   * 取得電影詳細資訊
+   */
+  /**
+   * 過濾電影詳情資料
+   */
+  /**
+   * 驗證電影詳情的必要欄位
+   */
+  private filterValidMovieDetail(movie: TMDBMovie): boolean {
+    return typeof movie.id === 'number' &&
+      Boolean(movie.title) &&
+      Boolean(movie.original_title) &&
+      Boolean(movie.original_language) &&
+      Boolean(movie.overview) &&
+      Boolean(movie.poster_path) &&
+      Boolean(movie.release_date) &&
+      typeof movie.popularity === 'number' &&
+      typeof movie.vote_average === 'number' &&
+      typeof movie.vote_count === 'number';
+  }
+
+  async getMovieById(movieId: number): Promise<any> {
+    try {
+      // 1. 檢查資料庫是否有快取
+      const movie = await prisma.movie.findUnique({
+        where: { id: movieId }
+      });
+
+      // 2. 如果有快取就直接返回整筆資料
+      if (movie) {
+        return movie;
+      }
+
+      // 3. 從 TMDB API 獲取電影詳情
+      const response = await axios.get<TMDBMovie>(`${this.tmdbBaseUrl}/movie/${movieId}`, {
+        params: {
+          api_key: this.tmdbApiKey,
+          language: 'zh-TW',
+          append_to_response: 'credits,keywords'
+        }
+      });
+
+      const tmdbMovie = response.data;
+
+      // 4. 驗證 MovieDetail 介面定義的必要欄位
+      if (!this.filterValidMovieDetail(tmdbMovie)) {
+        throw new AppError(500, 'Missing required movie data from TMDB', ErrorCodes.EXTERNAL_API_ERROR);
+      }
+
+      // 5. 存入資料庫（包含所有可用欄位）
+      await this.cacheMovies([tmdbMovie]);
+
+      // 6. 直接回傳 API 資料
+      return tmdbMovie;
+    } catch (error) {
+      console.error('Failed to get movie details:', error);
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        throw new AppError(404, 'Movie not found', ErrorCodes.MOVIE_NOT_FOUND);
+      }
+      throw new AppError(
+        500,
+        'Failed to get movie details',
+        ErrorCodes.EXTERNAL_API_ERROR
+      );
+    }
+  }
+
   private async cacheMovies(movies: TMDBMovie[]): Promise<void> {
     try {
       const now = new Date();
       await Promise.all(movies.map(movie => {
+        // 處理genres和genreIds
+        const genreIds = movie.genres
+          ? movie.genres.map(g => g.id)
+          : movie.genre_ids || [];
+
         const movieData = {
+          // 基本資訊
           id: movie.id,
           title: movie.title,
-          posterPath: movie.poster_path,
-          releaseDate: movie.release_date,
-          popularity: movie.popularity,
           originalTitle: movie.original_title || undefined,
           originalLanguage: movie.original_language || undefined,
           overview: movie.overview || undefined,
+          tagline: movie.tagline || undefined,
+          
+          // 視覺元素
+          posterPath: movie.poster_path,
           backdropPath: movie.backdrop_path || undefined,
+          
+          // 時間和分類資訊
+          releaseDate: movie.release_date,
+          runtime: movie.runtime || undefined,
+          genreIds,
+          
+          // 統計數據
+          popularity: movie.popularity,
           voteAverage: movie.vote_average || undefined,
           voteCount: movie.vote_count || undefined,
+          
+          // 其他資訊
           adult: movie.adult || false,
           video: movie.video || false,
-          genreIds: movie.genre_ids,
+          
+          // 製作資訊
+          budget: movie.budget || undefined,
+          revenue: movie.revenue || undefined,
+          homepage: movie.homepage || undefined,
+          imdbId: movie.imdb_id || undefined,
+          status: movie.status || undefined,
+          
+          // 複雜資料結構
+          belongsToCollection: movie.belongs_to_collection
+            ? JSON.stringify(movie.belongs_to_collection)
+            : undefined,
+          productionCompanies: movie.production_companies
+            ? JSON.stringify(movie.production_companies)
+            : undefined,
+          productionCountries: movie.production_countries
+            ? JSON.stringify(movie.production_countries)
+            : undefined,
+          spokenLanguages: movie.spoken_languages
+            ? JSON.stringify(movie.spoken_languages)
+            : undefined,
+          originCountry: movie.origin_country || undefined,
+          
+          // 快取時間
           cachedAt: now
         };
 

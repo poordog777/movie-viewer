@@ -41,7 +41,7 @@
 ### 第 2 階段：電影資料串接
 - [x] GET /movies/popular（熱門電影，按上映日期排序）
 - [x] GET /movies/search?query=關鍵字（搜尋電影，支援分頁）
-- [ ] GET /movies/:movieId（電影詳細資訊，包含平均評分）
+- [x] GET /movies/:movieId（電影詳細資訊，包含平均評分）
 
 ### 第 3 階段：評分功能（需驗證 JWT）
 - [ ] POST /movies/:movieId/rating（評分電影）

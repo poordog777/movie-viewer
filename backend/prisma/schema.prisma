@@ -45,6 +45,22 @@ model Movie {
   adult            Boolean?  @default(false)
   video            Boolean?  @default(false)
   genreIds         Int[]     @map("genre_ids")
+  
+  // 電影詳情選填欄位
+  budget           Int?
+  revenue          Int?
+  runtime          Int?
+  homepage         String?
+  imdbId          String?   @map("imdb_id")
+  status           String?
+  tagline          String?   @db.Text
+  
+  // JSON 格式儲存的複雜資料結構
+  belongsToCollection Json?   @map("belongs_to_collection")
+  productionCompanies Json?   @map("production_companies")
+  productionCountries Json?   @map("production_countries")
+  spokenLanguages    Json?   @map("spoken_languages")
+  originCountry      String[] @map("origin_country")
 
   // 關聯
   ratings   Rating[]

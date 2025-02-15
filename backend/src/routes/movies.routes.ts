@@ -187,4 +187,108 @@ router.get('/popular', MovieController.getPopularMovies);
  */
 router.get('/search', validateRequest(movieValidators.searchQuery, 'query'), MovieController.searchMovies);
 
+/**
+ * @swagger
+ * /api/v1/movies/{movieId}:
+ *   get:
+ *     summary: 取得電影詳細資訊
+ *     tags: [Movies]
+ *     description: 取得指定電影ID的詳細資訊，包含平均評分
+ *     parameters:
+ *       - in: path
+ *         name: movieId
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: 電影ID
+ *         example: 634649
+ *     responses:
+ *       200:
+ *         description: 成功取得電影詳情
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - id
+ *                 - title
+ *                 - overview
+ *                 - posterPath
+ *                 - releaseDate
+ *                 - popularity
+ *                 - voteAverage
+ *                 - voteCount
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   description: 電影ID
+ *                   example: 634649
+ *                 title:
+ *                   type: string
+ *                   description: 電影標題
+ *                   example: "蜘蛛人：無家日"
+ *                 overview:
+ *                   type: string
+ *                   description: 電影簡介
+ *                   example: "彼得帕克在揭露自己是蜘蛛人的真實身分後..."
+ *                 posterPath:
+ *                   type: string
+ *                   description: 海報圖片路徑
+ *                   example: "/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg"
+ *                 releaseDate:
+ *                   type: string
+ *                   format: date
+ *                   description: 上映日期
+ *                   example: "2021-12-15"
+ *                 popularity:
+ *                   type: number
+ *                   description: 熱門程度
+ *                   example: 123.45
+ *                 voteAverage:
+ *                   type: number
+ *                   description: 平均評分
+ *                   example: 8.5
+ *                 voteCount:
+ *                   type: integer
+ *                   description: 評分人數
+ *                   example: 1000
+ *       400:
+ *         description: 請求參數驗證失敗
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - message
+ *                 - code
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 錯誤訊息
+ *                   example: '無效的電影ID'
+ *                 code:
+ *                   type: string
+ *                   description: 錯誤代碼
+ *                   example: VALIDATION_ERROR
+ *       404:
+ *         description: 找不到電影
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - message
+ *                 - code
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 錯誤訊息
+ *                   example: '找不到該電影'
+ *                 code:
+ *                   type: string
+ *                   description: 錯誤代碼
+ *                   example: MOVIE_NOT_FOUND
+ */
+router.get('/:movieId', validateRequest(movieValidators.movieId, 'params'), MovieController.getMovieById);
+
 export default router;

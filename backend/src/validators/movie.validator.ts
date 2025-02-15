@@ -20,5 +20,16 @@ export const movieValidators = {
       .max(1000)
       .default(1)
       .description('頁碼')
+  }),
+
+  /**
+   * 電影ID參數驗證
+   */
+  movieId: Joi.object({
+    movieId: Joi.number()
+      .integer()
+      .positive()
+      .required()
+      .description('電影ID')
   })
 };
