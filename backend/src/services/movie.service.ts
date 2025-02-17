@@ -96,25 +96,6 @@ interface PaginatedResponse<T> {
   total_results: number;
 }
 
-// 電影詳情格式
-interface MovieDetail {
-  id: number;
-  title: string;
-  originalTitle: string;
-  originalLanguage: string;
-  overview: string;
-  tagline: string;
-  posterPath: string;
-  releaseDate: string;
-  runtime: number;
-  genres: { id: number; name: string; }[];
-  popularity: number;
-  voteAverage: number;
-  voteCount: number;
-  budget: number;
-  revenue: number;
-}
-
 class MovieService {
   private tmdbApiKey: string;
   private tmdbBaseUrl: string;
@@ -327,104 +308,53 @@ class MovieService {
   }
 
   /**
-   * 轉換成電影詳情格式
-   */
-  private transformToMovieDetail(movie: TMDBMovie | any): MovieDetail {
-    // 從 TMDB API
-    if ('poster_path' in movie) {
-      const genres = movie.genres || [];
-      return {
-        // 基本資訊
-        id: movie.id,
-        title: movie.title,
-        originalTitle: movie.original_title || '',
-        originalLanguage: movie.original_language || '',
-        overview: movie.overview || '',
-        tagline: movie.tagline || '',
-        
-        // 視覺元素
-        posterPath: movie.poster_path,
-        
-        // 時間與分類資訊
-        releaseDate: movie.release_date,
-        runtime: movie.runtime || 0,
-        genres: genres.map((g: { id: number; name: string }) => ({
-          id: g.id,
-          name: g.name
-        })),
-        
-        // 統計數據
-        popularity: movie.popularity,
-        voteAverage: movie.vote_average || 0,
-        voteCount: movie.vote_count || 0,
-        
-        // 製作資訊
-        budget: movie.budget || 0,
-        revenue: movie.revenue || 0
-      };
-    }
-    
-    // 從資料庫
-    return {
-      // 基本資訊
-      id: movie.id,
-      title: movie.title,
-      originalTitle: movie.originalTitle || '',
-      originalLanguage: movie.originalLanguage || '',
-      overview: movie.overview || '',
-      tagline: movie.tagline || '',
-      
-      // 視覺元素
-      posterPath: movie.posterPath,
-      
-      // 時間與分類資訊
-      releaseDate: movie.releaseDate,
-      runtime: movie.runtime || 0,
-      genres: movie.genres || [],
-      
-      // 統計數據
-      popularity: movie.popularity,
-      voteAverage: movie.voteAverage || 0,
-      voteCount: movie.voteCount || 0,
-      
-      // 製作資訊
-      budget: movie.budget || 0,
-      revenue: movie.revenue || 0
-    };
-  }
-
-  /**
    * 取得電影詳細資訊
    */
-  /**
-   * 過濾電影詳情資料
-   */
-  /**
-   * 驗證電影詳情的必要欄位
-   */
-  private filterValidMovieDetail(movie: TMDBMovie): boolean {
-    return typeof movie.id === 'number' &&
-      Boolean(movie.title) &&
-      Boolean(movie.original_title) &&
-      Boolean(movie.original_language) &&
-      Boolean(movie.overview) &&
-      Boolean(movie.poster_path) &&
-      Boolean(movie.release_date) &&
-      typeof movie.popularity === 'number' &&
-      typeof movie.vote_average === 'number' &&
-      typeof movie.vote_count === 'number';
-  }
-
-  async getMovieById(movieId: number): Promise<any> {
+  async getMovieById(movieId: number): Promise<TMDBMovie> {
     try {
       // 1. 檢查資料庫是否有快取
-      const movie = await prisma.movie.findUnique({
+      const cachedMovie = await prisma.movie.findUnique({
         where: { id: movieId }
       });
 
-      // 2. 如果有快取就直接返回整筆資料
-      if (movie) {
-        return movie;
+      // 2. 如果有快取就轉換格式和中文類型後返回
+      if (cachedMovie) {
+        const genres = cachedMovie.genreIds.map(id => ({
+          id,
+          name: MOVIE_GENRES[id] || '未知類型'
+        }));
+
+        const movieData: TMDBMovie = {
+          id: cachedMovie.id,
+          title: cachedMovie.title,
+          poster_path: cachedMovie.posterPath,
+          release_date: cachedMovie.releaseDate,
+          popularity: cachedMovie.popularity,
+          original_title: cachedMovie.originalTitle || null,
+          original_language: cachedMovie.originalLanguage || null,
+          overview: cachedMovie.overview || null,
+          backdrop_path: cachedMovie.backdropPath || null,
+          vote_average: cachedMovie.voteAverage || null,
+          vote_count: cachedMovie.voteCount || null,
+          adult: cachedMovie.adult || false,
+          video: cachedMovie.video || false,
+          genre_ids: cachedMovie.genreIds,
+          genres,  // 加入中文類型
+          budget: cachedMovie.budget ?? undefined,
+          revenue: cachedMovie.revenue ?? undefined,
+          runtime: cachedMovie.runtime ?? undefined,
+          homepage: cachedMovie.homepage ?? undefined,
+          imdb_id: cachedMovie.imdbId ?? undefined,
+          status: cachedMovie.status ?? undefined,
+          tagline: cachedMovie.tagline ?? undefined,
+          belongs_to_collection: cachedMovie.belongsToCollection ? JSON.parse(cachedMovie.belongsToCollection as string) : null,
+          production_companies: cachedMovie.productionCompanies ? JSON.parse(cachedMovie.productionCompanies as string) : [],
+          production_countries: cachedMovie.productionCountries ? JSON.parse(cachedMovie.productionCountries as string) : [],
+          spoken_languages: cachedMovie.spokenLanguages ? JSON.parse(cachedMovie.spokenLanguages as string) : [],
+          origin_country: cachedMovie.originCountry || []
+        };
+
+        return movieData;
       }
 
       // 3. 從 TMDB API 獲取電影詳情
@@ -438,25 +368,56 @@ class MovieService {
 
       const tmdbMovie = response.data;
 
-      // 4. 驗證 MovieDetail 介面定義的必要欄位
-      if (!this.filterValidMovieDetail(tmdbMovie)) {
-        throw new AppError(500, 'Missing required movie data from TMDB', ErrorCodes.EXTERNAL_API_ERROR);
-      }
-
-      // 5. 存入資料庫（包含所有可用欄位）
+      // 4. 存入資料庫（保存原始資料）
       await this.cacheMovies([tmdbMovie]);
 
-      // 6. 直接回傳 API 資料
+      // 5. 如果有 genres，轉換成中文
+      if (tmdbMovie.genres) {
+        tmdbMovie.genres = tmdbMovie.genres.map(genre => ({
+          id: genre.id,
+          name: MOVIE_GENRES[genre.id] || '未知類型'
+        }));
+      }
+
+      // 6. 回傳轉換後的資料
       return tmdbMovie;
     } catch (error) {
-      console.error('Failed to get movie details:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        throw new AppError(404, 'Movie not found', ErrorCodes.MOVIE_NOT_FOUND);
+      // 1. AppError 直接往上拋
+      if (error instanceof AppError) {
+        throw error;
       }
-      throw new AppError(
-        500,
-        'Failed to get movie details',
-        ErrorCodes.EXTERNAL_API_ERROR
+
+      // 2. API 錯誤處理
+      if (axios.isAxiosError(error)) {
+        // API 回應錯誤
+        if (error.response) {
+          switch (error.response.status) {
+            case 404:
+              throw new AppError(404, '找不到該電影', ErrorCodes.MOVIE_NOT_FOUND);
+            case 401:
+              throw new AppError(401, 'TMDB API 驗證失敗', ErrorCodes.EXTERNAL_API_ERROR);
+            case 429:
+              throw new AppError(429, 'TMDB API 請求次數超限', ErrorCodes.EXTERNAL_API_ERROR);
+            default:
+              throw new AppError(error.response.status || 500,
+                `TMDB API 請求失敗: ${error.response.data?.status_message || error.message}`,
+                ErrorCodes.EXTERNAL_API_ERROR
+              );
+          }
+        }
+        
+        // 網路或其他請求錯誤
+        throw new AppError(500,
+          `TMDB API 請求失敗: ${error.message}`,
+          ErrorCodes.EXTERNAL_API_ERROR
+        );
+      }
+
+      // 3. 其他未預期的錯誤
+      console.error('Failed to get movie details:', error);
+      throw new AppError(500,
+        '伺服器內部錯誤',
+        ErrorCodes.INTERNAL_SERVER_ERROR
       );
     }
   }

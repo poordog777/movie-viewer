@@ -29,21 +29,57 @@ CREATE TABLE users (
 ```
 
 #### 2. Movies 表
-電影資訊與評分數據
+電影資訊與評分數據（對齊 TMDB API）
 ```sql
 CREATE TABLE movies (
+    -- 基本資訊
     id              INTEGER PRIMARY KEY,  -- TMDB movie_id
     title           VARCHAR(255) NOT NULL,
+    original_title  VARCHAR(255),
+    original_language VARCHAR(50),
     overview        TEXT,
+    tagline         TEXT,
+    
+    -- 視覺元素
     poster_path     VARCHAR(255),
+    backdrop_path   VARCHAR(255),
+    
+    -- 時間和分類資訊
     release_date    DATE,
+    runtime         INTEGER,
+    genre_ids       INTEGER[],
+    
+    -- 統計數據
     popularity      FLOAT,
     vote_average    FLOAT,
     vote_count      INTEGER,
+    
+    -- 其他資訊
+    adult           BOOLEAN DEFAULT false,
+    video           BOOLEAN DEFAULT false,
+    
+    -- 製作資訊
+    budget          BIGINT,
+    revenue         BIGINT,
+    homepage        VARCHAR(255),
+    imdb_id         VARCHAR(20),
+    status          VARCHAR(50),
+    
+    -- 複雜資料結構（JSON 格式儲存）
+    belongs_to_collection JSONB,
+    production_companies JSONB,
+    production_countries JSONB,
+    spoken_languages    JSONB,
+    origin_country      VARCHAR(10)[],
+    
+    -- 本地評分資料
     user_votes      JSONB DEFAULT '{}',  -- 格式：{ "userId": score }
+    
+    -- 快取時間
     cached_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 索引優化
 CREATE INDEX idx_movies_release_date ON movies(release_date);
 CREATE INDEX idx_movies_popularity ON movies(popularity);
 CREATE INDEX idx_movies_title ON movies(title);
@@ -51,7 +87,12 @@ CREATE INDEX idx_movies_title ON movies(title);
 
 ### 資料設計說明
 
-1. 電影評分機制
+1. 電影資訊存儲
+   * 完整保存 TMDB API 回傳的所有欄位
+   * 複雜資料結構使用 JSONB 類型儲存
+   * 確保資料完整性和未來擴展性
+
+2. 電影評分機制
    * 評分儲存：使用 JSONB 類型的 user_votes 欄位儲存用戶評分
    * 格式：`{ "userId": score }`，score 為 1-10 的整數
    * 優點：
@@ -59,7 +100,7 @@ CREATE INDEX idx_movies_title ON movies(title);
      - 一次操作即可完成評分更新
      - 容易擴展（可添加時間戳等額外資訊）
 
-2. 效能考慮
+3. 效能考慮
    * 使用 JSONB 類型支援索引和高效查詢
    * 評分更新為原子操作，減少資料庫負擔
    * 適合讀多寫少的評分場景
@@ -117,10 +158,10 @@ sequenceDiagram
     alt DB中不存在
         Backend->>TMDB: 請求電影詳情
         TMDB->>Backend: 返回電影資料
-        Backend->>DB: 儲存電影資料
+        Backend->>DB: 完整儲存原始資料
     end
     DB->>Backend: 返回電影詳情
-    Backend->>Frontend: 返回詳情資料
+    Backend->>Frontend: 返回資料(含中文類型)
 ```
 
 ### 3. 用戶評分流程
@@ -172,8 +213,8 @@ sequenceDiagram
 4. 資料庫選擇
    - PostgreSQL：
      * 用戶數據：強一致性需求
-     * 電影資訊快取：減少 API 調用
-     * JSONB 支援：高效能的評分數據儲存
+     * 電影資訊快取：完整保存 TMDB API 資料
+     * JSONB 支援：高效能的複雜資料儲存
 
 5. 安全性考慮
    - JWT + OAuth：安全的身份驗證
@@ -188,3 +229,4 @@ sequenceDiagram
      * Popular API：檢查最高人氣電影的快取時間，每3小時更新一次
      * Movie Details API：僅在資料庫無該電影時調用 TMDB API
    - API 響應壓縮：減少傳輸大小
+   - 錯誤處理完善：明確的錯誤代碼和提示訊息

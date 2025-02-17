@@ -19,18 +19,17 @@ const router = Router();
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: success
- *                 data:
- *                   type: object
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
  *                   properties:
- *                     results:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/PopularMovie'
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         results:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/PopularMovie'
  */
 router.get('/popular', MovieController.getPopularMovies);
 
@@ -64,27 +63,26 @@ router.get('/popular', MovieController.getPopularMovies);
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: success
- *                 data:
- *                   type: object
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
  *                   properties:
- *                     page:
- *                       type: integer
- *                       example: 1
- *                     results:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/SearchMovie'
- *                     total_pages:
- *                       type: integer
- *                       example: 5
- *                     total_results:
- *                       type: integer
- *                       example: 100
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                           example: 1
+ *                         results:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/SearchMovie'
+ *                         total_pages:
+ *                           type: integer
+ *                           example: 5
+ *                         total_results:
+ *                           type: integer
+ *                           example: 100
  *       400:
  *         $ref: '#/components/responses/ValidationError'
  */
@@ -114,17 +112,22 @@ router.get('/search',
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: success
- *                 data:
- *                   $ref: '#/components/schemas/MovieDetail'
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/MovieDetail'
  *       400:
  *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/TMDBUnauthorized'
  *       404:
  *         $ref: '#/components/responses/MovieNotFound'
+ *       429:
+ *         $ref: '#/components/responses/TMDBRateLimit'
+ *       500:
+ *         $ref: '#/components/responses/ExternalAPIError'
  */
 router.get('/:movieId',
   validateRequest(movieValidators.movieId, 'params'),
@@ -169,16 +172,15 @@ router.get('/:movieId',
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: success
- *                 data:
- *                   $ref: '#/components/schemas/RatingResponse'
- *                 message:
- *                   type: string
- *                   example: 評分成功
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/RatingResponse'
+ *                     message:
+ *                       type: string
+ *                       example: 評分成功
  *       400:
  *         $ref: '#/components/responses/ValidationError'
  *       401:

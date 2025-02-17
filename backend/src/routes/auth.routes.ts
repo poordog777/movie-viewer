@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { createResponse } from '../types/response';
+import { createSuccessResponse } from '../types/response';
 import { validateRequest } from '../middleware/validator.middleware';
 import { googleCallbackSchema } from '../validators/auth.validator';
 import passport from 'passport';
@@ -48,32 +48,31 @@ router.get('/google', passport.authenticate('google', {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: success
- *                 data:
- *                   type: object
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
  *                   properties:
- *                     token:
- *                       type: string
- *                       example: eyJhbGciOiJIUzI1NiIs...
- *                     user:
+ *                     data:
  *                       type: object
  *                       properties:
- *                         id:
- *                           type: integer
- *                           example: 1
- *                         name:
+ *                         token:
  *                           type: string
- *                           example: 測試用戶
- *                         email:
- *                           type: string
- *                           example: test@example.com
- *                 message:
- *                   type: string
- *                   example: Google 登入成功
+ *                           example: eyJhbGciOiJIUzI1NiIs...
+ *                         user:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 1
+ *                             name:
+ *                               type: string
+ *                               example: 測試用戶
+ *                             email:
+ *                               type: string
+ *                               example: test@example.com
+ *                     message:
+ *                       type: string
+ *                       example: Google 登入成功
  */
 router.get('/google/callback',
   passport.authenticate('google', { session: false }),
@@ -86,7 +85,7 @@ router.get('/google/callback',
     });
 
     res.json(
-      createResponse('success', {
+      createSuccessResponse({
         token,
         user: {
           id: user.id,
@@ -113,19 +112,18 @@ router.get('/google/callback',
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: success
- *                 message:
- *                   type: string
- *                   example: 登出成功
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: 登出成功
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
 router.post('/logout', authenticate, (req: Request, res: Response) => {
-  res.json(createResponse('success', null, '登出成功'));
+  res.json(createSuccessResponse(null, '登出成功'));
 });
 
 export default router;

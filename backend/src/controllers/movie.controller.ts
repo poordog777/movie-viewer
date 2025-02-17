@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import MovieService from '../services/movie.service';
 import { AppError, ErrorCodes } from '../types/error';
+import { createSuccessResponse } from '../types/response';
 import type { User } from '@prisma/client';
 
 class MovieController {
@@ -11,7 +12,7 @@ class MovieController {
   async getPopularMovies(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await MovieService.getPopularMovies();
-      res.json(result);
+      res.json(createSuccessResponse(result));
     } catch (error) {
       if (error instanceof AppError) {
         next(error);
@@ -36,7 +37,7 @@ class MovieController {
         query as string,
         Number(page)
       );
-      res.json(result);
+      res.json(createSuccessResponse(result));
     } catch (error) {
       if (error instanceof AppError) {
         next(error);
@@ -58,7 +59,7 @@ class MovieController {
     try {
       const movieId = Number(req.params.movieId);
       const movie = await MovieService.getMovieById(movieId);
-      res.json(movie);
+      res.json(createSuccessResponse(movie));
     } catch (error) {
       if (error instanceof AppError) {
         next(error);
@@ -84,10 +85,7 @@ class MovieController {
 
       const result = await MovieService.rateMovie(movieId, userId, score);
       
-      res.json({
-        message: '評分成功',
-        data: result
-      });
+      res.json(createSuccessResponse(result, '評分成功'));
     } catch (error) {
       if (error instanceof AppError) {
         next(error);
