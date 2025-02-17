@@ -100,10 +100,6 @@ dist
 # vuepress build output
 .vuepress/dist
 
-# vuepress v2.x temp and cache directory
-.temp
-.cache
-
 # vitepress build output
 **/.vitepress/dist
 
@@ -140,3 +136,19 @@ dist
 !/backend/.env.example
 /frontend/.env*
 !/frontend/.env.example
+
+# React 構建輸出
+/frontend/build/
+
+# 測試覆蓋率報告
+/frontend/coverage/
+
+# IDE 設定
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 系統文件
+.DS_Store
+Thumbs.db
