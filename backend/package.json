@@ -17,7 +17,7 @@
     "test:movies": "dotenv -e .env.development -- cross-env NODE_ENV=development mocha -r ts-node/register \"src/tests/movies/**/*.test.ts\"",
     "test:single": "cd src/tests && dotenv -e ../../.env.development -- cross-env NODE_ENV=development mocha -r ts-node/register",
     "migrate:dev": "dotenv -e .env.development -- prisma migrate dev",
-    "migrate:prod": "dotenv -e .env.production -- prisma migrate deploy",
+    "migrate:prod": "prisma migrate deploy",
     "migrate:status": "dotenv -e .env.development -- prisma migrate status",
     "db": "dotenv -e .env.development -- npx prisma db push ; npx prisma generate",
     "db:push": "dotenv -e .env.development -- prisma db push",
