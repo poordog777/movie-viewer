@@ -3,7 +3,7 @@
  * components:
  *   responses:
  *     Unauthorized:
- *       description: 未授權訪問
+ *       description: JWT 未授權訪問
  *       content:
  *         application/json:
  *           schema:

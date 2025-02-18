@@ -20,16 +20,28 @@ const router = Router();
  *           application/json:
  *             schema:
  *               allOf:
- *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - $ref: '#/components/schemas/ApiSuccessResponse'
  *                 - type: object
  *                   properties:
  *                     data:
  *                       type: object
  *                       properties:
+ *                         page:
+ *                           type: integer
+ *                           example: 1
  *                         results:
  *                           type: array
  *                           items:
  *                             $ref: '#/components/schemas/PopularMovie'
+ *                         total_pages:
+ *                           type: integer
+ *                           example: 1
+ *                         total_results:
+ *                           type: integer
+ *                           example: 30
+ *       429:
+ *         $ref: '#/components/responses/TMDBRateLimit'
+
  */
 router.get('/popular', MovieController.getPopularMovies);
 
@@ -85,6 +97,8 @@ router.get('/popular', MovieController.getPopularMovies);
  *                           example: 100
  *       400:
  *         $ref: '#/components/responses/ValidationError'
+ *       429:
+ *         $ref: '#/components/responses/TMDBRateLimit'
  */
 router.get('/search',
   validateRequest(movieValidators.searchQuery, 'query'),
@@ -120,14 +134,10 @@ router.get('/search',
  *                       $ref: '#/components/schemas/MovieDetail'
  *       400:
  *         $ref: '#/components/responses/ValidationError'
- *       401:
- *         $ref: '#/components/responses/TMDBUnauthorized'
  *       404:
  *         $ref: '#/components/responses/MovieNotFound'
  *       429:
  *         $ref: '#/components/responses/TMDBRateLimit'
- *       500:
- *         $ref: '#/components/responses/ExternalAPIError'
  */
 router.get('/:movieId',
   validateRequest(movieValidators.movieId, 'params'),
