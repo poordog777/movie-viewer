@@ -1,8 +1,3 @@
-import dotenv from 'dotenv';
-
-// 環境變數由執行腳本控制
-dotenv.config();
-
 const requiredEnvVars = [
   'DATABASE_URL',
   'JWT_SECRET',
