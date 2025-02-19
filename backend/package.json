@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node dist/server.js",
+    "start": "prisma migrate deploy && node dist/server.js",
     "dev": "dotenv -e .env.development -- cross-env NODE_ENV=development nodemon src/server.ts",
     "build": "tsc",
-    "postinstall": "prisma generate && prisma migrate deploy",
+    "postinstall": "prisma generate",
     "test": "dotenv -e .env.development -- cross-env NODE_ENV=development mocha -r ts-node/register \"src/tests/**/*.test.ts\"",
     "test:watch": "dotenv -e .env.development -- cross-env NODE_ENV=development mocha -r ts-node/register \"src/tests/**/*.test.ts\" --watch",
     "test:validation": "dotenv -e .env.development -- cross-env NODE_ENV=development mocha -r ts-node/register \"src/tests/validation/**/*.test.ts\"",
