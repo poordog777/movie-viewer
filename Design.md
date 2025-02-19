@@ -38,30 +38,62 @@
 ```typescript
 interface ApiResponse<T = any> {
   // API 響應狀態
-  status: 'success' | 'error' | 'fail';
+  status: 'success' | 'fail';
   
-  // 可選的響應消息
+  // 響應消息（用於成功提示或錯誤說明）
   message?: string;
   
   // 響應數據
   data?: T;
   
-  // 分頁等元數據（可選）
-  meta?: {
-    page?: number;
-    limit?: number;
-    total?: number;
-  };
+  // 錯誤代碼（當 status 為 fail 時使用）
+  errorCode?: string;
 }
 ```
 
-### 錯誤響應
-當發生錯誤時，響應格式為：
-```typescript
+### 響應範例
+
+#### 成功響應 - 電影列表
+```json
 {
-  status: "fail" | "error",
-  message: string,
-  errorCode: string
+  "status": "success",
+  "data": {
+    "page": 1,
+    "results": [
+      {
+        "id": 123,
+        "title": "電影標題",
+        "posterPath": "/path/to/poster.jpg",
+        "releaseDate": "2024-02-19",
+        "popularity": 8.5
+      }
+    ],
+    "total_pages": 5,
+    "total_results": 100
+  }
+}
+```
+
+#### 成功響應 - 評分
+```json
+{
+  "status": "success",
+  "message": "評分成功",
+  "data": {
+    "movieId": 123,
+    "score": 8,
+    "averageScore": 8.5,
+    "totalVotes": 100
+  }
+}
+```
+
+#### 錯誤響應
+```json
+{
+  "status": "fail",
+  "message": "找不到指定的電影",
+  "errorCode": "MOVIE_NOT_FOUND"
 }
 ```
 

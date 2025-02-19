@@ -7,8 +7,36 @@ Movie Viewer 是一個現代化的電影評論平台，整合第三方 TMDB API 
 - Google 帳號快速登入
 - 電影評分系統 (1-10分)
 - 電影瀏覽模式
-  * 主頁顯示近期熱門電影(按上映日期排序)
+  * 主頁顯示近期熱門電影(按熱門度排序)
   * 搜尋特定電影(搜尋框，支援分頁瀏覽)
+
+## 系統文檔
+
+專案包含詳細的系統設計文檔，幫助開發者更好地理解系統：
+
+### [架構設計文檔](Architecture.md)
+- 整體系統架構圖
+- 資料庫設計詳解
+- 核心功能流程
+- 技術選擇說明
+- 安全性和效能優化考慮
+
+### [功能設計文檔](Design.md)
+- 詳細功能清單
+- 完整 API 設計
+- API 響應格式規範
+- 錯誤處理機制
+- 開發進度追蹤
+
+## API 文檔
+本專案採用 Swagger UI 作為 API 文檔工具，提供互動式的 API 測試介面：
+
+### 線上文檔網址
+- 已部署至 Railway：[https://movie-viewer.up.railway.app/api-docs](https://movie-viewer.up.railway.app/api-docs)
+
+### 使用說明
+- API 測試時，請在左上角的 Servers 選單中選擇第二個 "Production" 環境
+- 文檔提供完整的 API 端點說明、請求/響應格式範例
 
 ## 使用技術 (Tech Stack)
 
@@ -49,6 +77,21 @@ Movie Viewer 是一個現代化的電影評論平台，整合第三方 TMDB API 
 - GitHub Actions（CI/CD）
 - Vercel（前端部署）
 - Railway（後端部署）
+
+## 專案結構
+```bash
+movie-viewer/
+├── backend/              # 後端程式碼
+│   ├── prisma/           # 資料庫 Schema
+│   ├── src/              
+│   │   ├── config/       # 配置檔案
+│   │   ├── controllers/  # 控制器
+│   │   ├── middleware/   # 中間件
+│   │   ├── routes/       # 路由定義
+│   │   └── services/     # 業務邏輯
+│   └── tests/            # 測試檔案
+└── frontend/             # 前端程式碼
+```
 
 ## 開始使用
 
@@ -93,26 +136,7 @@ npm run start   # 使用正式環境配置
 npm start
 ```
 
-## API 文檔
-API 文檔使用 Swagger UI 提供，本地開發時可訪問：
-http://localhost:3000/api-docs
-
-## 專案結構
-```bash
-movie-viewer/
-├── backend/              # 後端程式碼
-│   ├── prisma/           # 資料庫 Schema
-│   ├── src/              
-│   │   ├── config/       # 配置檔案
-│   │   ├── controllers/  # 控制器
-│   │   ├── middleware/   # 中間件
-│   │   ├── routes/       # 路由定義
-│   │   └── services/     # 業務邏輯
-│   └── tests/            # 測試檔案
-└── frontend/             # 前端程式碼
-```
-
-## 環境配置
+### 環境配置
 專案採用兩套環境配置：
 - 開發環境（Development）：用於本地開發和測試
   * 使用 .env.development
