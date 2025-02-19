@@ -17,7 +17,7 @@ const options = {
         description: '開發環境'
       },
       {
-        url: env.apiUrl || 'https://api.movieviewer.example.com',
+        url: 'https://movie-viewer.up.railway.app',
         description: '生產環境'
       }
     ]
