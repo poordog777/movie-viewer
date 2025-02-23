@@ -13,9 +13,9 @@ describe('認證測試', () => {
       id: 1,
       email: 'test@example.com',
       name: 'Test User',
-      googleId: 'test-google-id-123',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      google_id: 'test-google-id-123',
+      created_at: new Date(),
+      updated_at: new Date()
     };
 
     let verifyTokenStub: sinon.SinonStub;

@@ -75,8 +75,8 @@ interface TMDBResponse {
 interface PopularMovie {
   id: number;
   title: string;
-  posterPath: string;
-  releaseDate: string;
+  poster_path: string;
+  release_date: string;
   popularity: number;
 }
 
@@ -84,9 +84,9 @@ interface PopularMovie {
 interface SearchMovie {
   id: number;
   title: string;
-  originalTitle: string;
-  posterPath: string;
-  releaseDate: string;
+  original_title: string;
+  poster_path: string;
+  release_date: string;
 }
 
 interface PaginatedResponse<T> {
@@ -128,11 +128,17 @@ class MovieService {
         };
       }
 
-      // 3. 快取過期，從 TMDB 獲取新資料
-      const response = await this.fetchTMDBPopularMovies();
-      const validMovies = this.filterValidMovies(response.results);
+      // 3. 快取過期，從 TMDB 獲取新資料 (兩頁)
+      const [page1Response, page2Response] = await Promise.all([
+        this.fetchTMDBPopularMovies(1),
+        this.fetchTMDBPopularMovies(2)
+      ]);
 
-      // 4. 更新快取並返回結果
+      // 4. 合併兩頁結果並過濾
+      const allMovies = [...page1Response.results, ...page2Response.results];
+      const validMovies = this.filterValidMovies(allMovies);
+
+      // 5. 更新快取並返回結果
       await this.cacheMovies(validMovies);
       const results = validMovies.map(this.transformToPopularMovie);
 
@@ -197,12 +203,11 @@ class MovieService {
       const results = validMovies.map(movie => ({
         id: movie.id,
         title: movie.title,
-        originalTitle: movie.original_title!,
-        posterPath: movie.poster_path,
-        releaseDate: movie.release_date
+        original_title: movie.original_title!,
+        poster_path: movie.poster_path,
+        release_date: movie.release_date
       }));
 
-      // 4. 返回結果
       return {
         page: response.data.page,
         results,
@@ -225,11 +230,11 @@ class MovieService {
   private async checkCache(): Promise<{ isExpired: boolean; movies: PopularMovie[] }> {
     // 檢查最新快取時間
     const mostRecent = await prisma.movie.findFirst({
-      orderBy: { cachedAt: 'desc' }
+      orderBy: { cached_at: 'desc' }
     });
 
-    const isExpired = !mostRecent?.cachedAt ||
-      (new Date().getTime() - mostRecent.cachedAt.getTime() > this.CACHE_DURATION);
+    const isExpired = !mostRecent?.cached_at ||
+      (new Date().getTime() - mostRecent.cached_at.getTime() > this.CACHE_DURATION);
 
     if (isExpired) {
       return { isExpired: true, movies: [] };
@@ -240,30 +245,40 @@ class MovieService {
       select: {
         id: true,
         title: true,
-        posterPath: true,
-        releaseDate: true,
+        poster_path: true,
+        release_date: true,
         popularity: true,
+        vote_average: true
       },
       orderBy: { popularity: 'desc' },
       take: 30
     });
 
+    // 轉換成預期的格式
+    const transformedMovies = movies.map(movie => ({
+      id: movie.id,
+      title: movie.title,
+      poster_path: movie.poster_path,
+      release_date: movie.release_date,
+      popularity: movie.popularity
+    }));
+
     return {
       isExpired: false,
-      movies
+      movies: transformedMovies
     };
   }
 
   /**
    * 從 TMDB API 取得熱門電影
    */
-  private async fetchTMDBPopularMovies(): Promise<TMDBResponse> {
+  private async fetchTMDBPopularMovies(page: number = 1): Promise<TMDBResponse> {
     try {
       const response = await axios.get<TMDBResponse>(`${this.tmdbBaseUrl}/movie/popular`, {
         params: {
           api_key: this.tmdbApiKey,
           language: 'zh-TW',
-          page: 1,
+          page: page,
           region: 'TW'
         }
       });
@@ -283,7 +298,6 @@ class MovieService {
    */
   private filterValidMovies(movies: TMDBMovie[]): TMDBMovie[] {
     return movies
-      .slice(0, 50) // 先取前50部
       .filter(movie =>
         typeof movie.id === 'number' &&
         movie.title &&
@@ -291,7 +305,8 @@ class MovieService {
         movie.release_date &&
         typeof movie.popularity === 'number'
       )
-      .slice(0, 30); // 最後只要30部
+      .sort((a, b) => b.popularity - a.popularity) // 按熱門程度排序
+      .slice(0, 30); // 取前30部
   }
 
   /**
@@ -301,8 +316,8 @@ class MovieService {
     return {
       id: movie.id,
       title: movie.title,
-      posterPath: movie.poster_path,  // 移除 ! 因為已經在 filter 中確保存在
-      releaseDate: movie.release_date,
+      poster_path: movie.poster_path,
+      release_date: movie.release_date,
       popularity: movie.popularity
     };
   }
@@ -319,7 +334,7 @@ class MovieService {
 
       // 2. 如果有快取就轉換格式和中文類型後返回
       if (cachedMovie) {
-        const genres = cachedMovie.genreIds.map(id => ({
+        const genres = cachedMovie.genre_ids.map(id => ({
           id,
           name: MOVIE_GENRES[id] || '未知類型'
         }));
@@ -327,31 +342,31 @@ class MovieService {
         const movieData: TMDBMovie = {
           id: cachedMovie.id,
           title: cachedMovie.title,
-          poster_path: cachedMovie.posterPath,
-          release_date: cachedMovie.releaseDate,
+          poster_path: cachedMovie.poster_path,
+          release_date: cachedMovie.release_date,
           popularity: cachedMovie.popularity,
-          original_title: cachedMovie.originalTitle || null,
-          original_language: cachedMovie.originalLanguage || null,
+          original_title: cachedMovie.original_title || null,
+          original_language: cachedMovie.original_language || null,
           overview: cachedMovie.overview || null,
-          backdrop_path: cachedMovie.backdropPath || null,
-          vote_average: cachedMovie.voteAverage || null,
-          vote_count: cachedMovie.voteCount || null,
+          backdrop_path: cachedMovie.backdrop_path || null,
+          vote_average: cachedMovie.vote_average || null,
+          vote_count: cachedMovie.vote_count || null,
           adult: cachedMovie.adult || false,
           video: cachedMovie.video || false,
-          genre_ids: cachedMovie.genreIds,
+          genre_ids: cachedMovie.genre_ids,
           genres,  // 加入中文類型
           budget: cachedMovie.budget ?? undefined,
           revenue: cachedMovie.revenue ?? undefined,
           runtime: cachedMovie.runtime ?? undefined,
           homepage: cachedMovie.homepage ?? undefined,
-          imdb_id: cachedMovie.imdbId ?? undefined,
+          imdb_id: cachedMovie.imdb_id ?? undefined,
           status: cachedMovie.status ?? undefined,
           tagline: cachedMovie.tagline ?? undefined,
-          belongs_to_collection: cachedMovie.belongsToCollection ? JSON.parse(cachedMovie.belongsToCollection as string) : null,
-          production_companies: cachedMovie.productionCompanies ? JSON.parse(cachedMovie.productionCompanies as string) : [],
-          production_countries: cachedMovie.productionCountries ? JSON.parse(cachedMovie.productionCountries as string) : [],
-          spoken_languages: cachedMovie.spokenLanguages ? JSON.parse(cachedMovie.spokenLanguages as string) : [],
-          origin_country: cachedMovie.originCountry || []
+          belongs_to_collection: cachedMovie.belongs_to_collection ? JSON.parse(cachedMovie.belongs_to_collection as string) : null,
+          production_companies: cachedMovie.production_companies ? JSON.parse(cachedMovie.production_companies as string) : [],
+          production_countries: cachedMovie.production_countries ? JSON.parse(cachedMovie.production_countries as string) : [],
+          spoken_languages: cachedMovie.spoken_languages ? JSON.parse(cachedMovie.spoken_languages as string) : [],
+          origin_country: cachedMovie.origin_country || []
         };
 
         return movieData;
@@ -426,10 +441,10 @@ class MovieService {
    * 評分電影
    */
   async rateMovie(movieId: number, userId: number, score: number): Promise<{
-    movieId: number;
+    movie_id: number;
     score: number;
-    averageScore: number;
-    totalVotes: number;
+    average_score: number;
+    total_votes: number;
   }> {
     try {
       // 1. 檢查電影是否存在
@@ -442,42 +457,42 @@ class MovieService {
       }
 
       // 2. 解析目前的評分數據
-      const userVotes = movie.userVotes as Record<string, number>;
-      const oldScore = userVotes[userId];
-      const isNewVote = !oldScore;
+      const user_votes = movie.user_votes as Record<string, number>;
+      const old_score = user_votes[userId];
+      const is_new_vote = !old_score;
 
       // 3. 計算新的評分統計
-      let newVoteCount = movie.voteCount || 0;
-      let newVoteAverage = movie.voteAverage || 0;
+      let new_vote_count = movie.vote_count || 0;
+      let new_vote_average = movie.vote_average || 0;
 
-      if (isNewVote) {
+      if (is_new_vote) {
         // 新評分
-        newVoteCount++;
-        newVoteAverage = ((newVoteAverage * (newVoteCount - 1)) + score) / newVoteCount;
+        new_vote_count++;
+        new_vote_average = ((new_vote_average * (new_vote_count - 1)) + score) / new_vote_count;
       } else {
         // 更新評分
-        newVoteAverage = ((newVoteAverage * newVoteCount) - oldScore + score) / newVoteCount;
+        new_vote_average = ((new_vote_average * new_vote_count) - old_score + score) / new_vote_count;
       }
 
       // 4. 更新電影資料
-      const updatedMovie = await prisma.movie.update({
+      const updated_movie = await prisma.movie.update({
         where: { id: movieId },
         data: {
-          userVotes: {
-            ...userVotes,
+          user_votes: {
+            ...user_votes,
             [userId]: score
           },
-          voteAverage: newVoteAverage,
-          voteCount: newVoteCount
+          vote_average: new_vote_average,
+          vote_count: new_vote_count
         }
       });
 
       // 5. 返回更新後的數據
       return {
-        movieId: updatedMovie.id,
+        movie_id: updated_movie.id,
         score,
-        averageScore: updatedMovie.voteAverage || 0,
-        totalVotes: updatedMovie.voteCount || 0
+        average_score: updated_movie.vote_average || 0,
+        total_votes: updated_movie.vote_count || 0
       };
 
     } catch (error) {
@@ -497,68 +512,53 @@ class MovieService {
     try {
       const now = new Date();
       await Promise.all(movies.map(movie => {
-        // 處理genres和genreIds
-        const genreIds = movie.genres
+        // 處理genres和genre_ids
+        const genre_ids = movie.genres
           ? movie.genres.map(g => g.id)
           : movie.genre_ids || [];
 
-        const movieData = {
-          // 基本資訊
+        const movie_data = {
           id: movie.id,
           title: movie.title,
-          originalTitle: movie.original_title || undefined,
-          originalLanguage: movie.original_language || undefined,
+          original_title: movie.original_title || undefined,
+          original_language: movie.original_language || undefined,
           overview: movie.overview || undefined,
           tagline: movie.tagline || undefined,
-          
-          // 視覺元素
-          posterPath: movie.poster_path,
-          backdropPath: movie.backdrop_path || undefined,
-          
-          // 時間和分類資訊
-          releaseDate: movie.release_date,
+          poster_path: movie.poster_path,
+          backdrop_path: movie.backdrop_path || undefined,
+          release_date: movie.release_date,
           runtime: movie.runtime || undefined,
-          genreIds,
-          
-          // 統計數據
+          genre_ids,
           popularity: movie.popularity,
-          voteAverage: movie.vote_average || undefined,
-          voteCount: movie.vote_count || undefined,
-          
-          // 其他資訊
+          vote_average: movie.vote_average || undefined,
+          vote_count: movie.vote_count || undefined,
           adult: movie.adult || false,
           video: movie.video || false,
-          
-          // 製作資訊
           budget: movie.budget || undefined,
           revenue: movie.revenue || undefined,
           homepage: movie.homepage || undefined,
-          imdbId: movie.imdb_id || undefined,
+          imdb_id: movie.imdb_id || undefined,
           status: movie.status || undefined,
-          
-          // 複雜資料結構
-          belongsToCollection: movie.belongs_to_collection
+          belongs_to_collection: movie.belongs_to_collection
             ? JSON.stringify(movie.belongs_to_collection)
             : undefined,
-          productionCompanies: movie.production_companies
+          production_companies: movie.production_companies
             ? JSON.stringify(movie.production_companies)
             : undefined,
-          productionCountries: movie.production_countries
+          production_countries: movie.production_countries
             ? JSON.stringify(movie.production_countries)
             : undefined,
-          spokenLanguages: movie.spoken_languages
+          spoken_languages: movie.spoken_languages
             ? JSON.stringify(movie.spoken_languages)
             : undefined,
-          originCountry: movie.origin_country || undefined,
-          
-          // 快取時間
-          cachedAt: now
+          origin_country: movie.origin_country || undefined,
+          cached_at: now
         };
 
         return prisma.movie.upsert({
           where: { id: movie.id },
-          update: movieData,
-          create: movieData
+          update: movie_data,
+          create: movie_data
         });
       }));
     } catch (error) {

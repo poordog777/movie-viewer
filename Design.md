@@ -19,8 +19,8 @@
 |--------|----------|------|------|
 | GET | /auth/google | Google OAuth 登入入口 | 重定向至 Google 登入頁面 |
 | GET | /auth/google/callback | Google OAuth 回調（回傳 JWT） | { token: string } |
-| GET | /movies/popular | 取得近期熱門電影（每3小時更新） | { status: "success", data: { page: number, results: [{ id: number, title: string, posterPath: string, releaseDate: string, popularity: number }], total_pages: number, total_results: number } } |
-| GET | /movies/search?query=關鍵字&page=1 | 關鍵字搜尋電影 | { status: "success", data: { page: number, results: [{ id: number, title: string, originalTitle: string, posterPath: string, releaseDate: string }], total_pages: number, total_results: number } } |
+| GET | /movies/popular | 取得近期熱門電影（每3小時更新） | { status: "success", data: { page: number, results: [{ id: number, title: string, poster_path: string, release_date: string, popularity: number }], total_pages: number, total_results: number } } |
+| GET | /movies/search?query=關鍵字&page=1 | 關鍵字搜尋電影 | { status: "success", data: { page: number, results: [{ id: number, title: string, original_title: string, poster_path: string, release_date: string }], total_pages: number, total_results: number } } |
 | GET | /movies/:movieId | 取得電影詳細資訊（包含平均評分） | { status: "success", data: TMDB API 回傳資料，但 genres 欄位會轉換為中文 } |
 
 ### 🔒 需要 JWT 認證的 API
@@ -29,7 +29,7 @@
 | Method | Endpoint | 說明 | 請求/回應 |
 |--------|----------|------|------|
 | POST | /auth/logout | 登出 | { status: "success", message: string } |
-| POST | /movies/:movieId/rating | 評分電影（1~10分）| Request Body: { score: number }<br>Response: { status: "success", message: "評分成功", data: { movieId: number, score: number, averageScore: number, totalVotes: number } } |
+| POST | /movies/:movieId/rating | 評分電影（1~10分）| Request Body: { score: number }<br>Response: { status: "success", message: "評分成功", data: { movie_id: number, score: number, average_score: number, total_votes: number } } |
 
 ### 統一響應格式
 
@@ -63,8 +63,8 @@ interface ApiResponse<T = any> {
       {
         "id": 123,
         "title": "電影標題",
-        "posterPath": "/path/to/poster.jpg",
-        "releaseDate": "2024-02-19",
+        "poster_path": "/path/to/poster.jpg",
+        "release_date": "2024-02-19",
         "popularity": 8.5
       }
     ],
@@ -80,10 +80,10 @@ interface ApiResponse<T = any> {
   "status": "success",
   "message": "評分成功",
   "data": {
-    "movieId": 123,
+    "movie_id": 123,
     "score": 8,
-    "averageScore": 8.5,
-    "totalVotes": 100
+    "average_score": 8.5,
+    "total_votes": 100
   }
 }
 ```

@@ -33,7 +33,7 @@ export const authenticate = async (
         id: true, 
         email: true,
         name: true,
-        googleId: true 
+        google_id: true 
       }
     });
 

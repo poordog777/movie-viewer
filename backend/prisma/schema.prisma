@@ -12,12 +12,12 @@ datasource db {
 
 // 使用者
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String
-  googleId  String   @unique @map("google_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  name       String
+  google_id  String   @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@map("users")
 }
@@ -25,42 +25,42 @@ model User {
 // 電影快取（對齊 TMDB API）
 model Movie {
   // 必填欄位（首頁展示用）
-  id               Int       @id // TMDB movie_id
-  title            String
-  posterPath       String    @map("poster_path")
-  releaseDate      String    @map("release_date")
-  popularity       Float
-  cachedAt         DateTime  @default(now()) @map("cached_at")
+  id            Int       @id // TMDB movie_id
+  title         String
+  poster_path   String    
+  release_date  String    
+  popularity    Float
+  cached_at     DateTime  @default(now())
 
   // 選填欄位
-  originalTitle    String?   @map("original_title")
-  originalLanguage String?   @map("original_language")
-  overview         String?   @db.Text
-  backdropPath     String?   @map("backdrop_path")
-  voteAverage      Float?    @map("vote_average")
-  voteCount        Int?      @map("vote_count")
-  adult            Boolean?  @default(false)
-  video            Boolean?  @default(false)
-  genreIds         Int[]     @map("genre_ids")
+  original_title     String?   
+  original_language  String?   
+  overview          String?   @db.Text
+  backdrop_path     String?   
+  vote_average      Float?    
+  vote_count        Int?      
+  adult             Boolean?  @default(false)
+  video             Boolean?  @default(false)
+  genre_ids         Int[]     
   
   // 電影詳情選填欄位
-  budget           Int?
-  revenue          Int?
-  runtime          Int?
-  homepage         String?
-  imdbId          String?   @map("imdb_id")
-  status           String?
-  tagline          String?   @db.Text
+  budget            Int?
+  revenue           Int?
+  runtime           Int?
+  homepage          String?
+  imdb_id          String?   
+  status            String?
+  tagline           String?   @db.Text
   
   // JSON 格式儲存的複雜資料結構
-  belongsToCollection Json?   @map("belongs_to_collection")
-  productionCompanies Json?   @map("production_companies")
-  productionCountries Json?   @map("production_countries")
-  spokenLanguages    Json?   @map("spoken_languages")
-  originCountry      String[] @map("origin_country")
+  belongs_to_collection Json?   
+  production_companies  Json?   
+  production_countries  Json?   
+  spoken_languages     Json?   
+  origin_country       String[] 
   
   // 評分相關
-  userVotes        Json      @default("{}") @map("user_votes")  // 格式：{ "userId": score }
+  user_votes          Json      @default("{}")  // 格式：{ "userId": score }
 
   @@map("movies")
   @@index([popularity], name: "idx_movies_popularity")

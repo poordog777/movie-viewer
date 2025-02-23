@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 const generateRandomUser = () => ({
   email: `test.${crypto.randomBytes(8).toString('hex')}@example.com`,
   name: 'Test User',
-  googleId: `google_${crypto.randomBytes(16).toString('hex')}`,
+  google_id: `google_${crypto.randomBytes(16).toString('hex')}`,
 });
 
 describe('User Model Tests', () => {
@@ -32,9 +32,9 @@ describe('User Model Tests', () => {
       expect(testUser).to.have.property('id');
       expect(testUser.email).to.equal(userData.email);
       expect(testUser.name).to.equal(userData.name);
-      expect(testUser.googleId).to.equal(userData.googleId);
-      expect(testUser.createdAt).to.be.instanceOf(Date);
-      expect(testUser.updatedAt).to.be.instanceOf(Date);
+      expect(testUser.google_id).to.equal(userData.google_id);
+      expect(testUser.created_at).to.be.instanceOf(Date);
+      expect(testUser.updated_at).to.be.instanceOf(Date);
 
       // 通過 id 讀取用戶
       const foundUser = await prisma.user.findUnique({
@@ -44,7 +44,7 @@ describe('User Model Tests', () => {
       expect(foundUser).to.not.be.null;
       expect(foundUser?.id).to.equal(testUser.id);
       expect(foundUser?.email).to.equal(userData.email);
-      expect(foundUser?.googleId).to.equal(userData.googleId);
+      expect(foundUser?.google_id).to.equal(userData.google_id);
     });
 
     it('不應該允許創建具有相同 email 的用戶', async () => {

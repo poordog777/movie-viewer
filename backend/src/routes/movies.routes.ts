@@ -12,7 +12,7 @@ const router = Router();
  *   get:
  *     summary: 取得近期熱門電影
  *     tags: [Movies]
- *     description: 取得按上映日期排序的前 30 部熱門電影
+ *     description: 取得近期熱門電影 30 部
  *     responses:
  *       200:
  *         description: 成功取得電影列表

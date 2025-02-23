@@ -54,8 +54,8 @@
  *       required:
  *         - id
  *         - title
- *         - posterPath
- *         - releaseDate
+ *         - poster_path
+ *         - release_date
  *         - popularity
  *       properties:
  *         id:
@@ -66,12 +66,12 @@
  *           type: string
  *           description: 電影標題
  *           example: "玩具總動員 4"
- *         posterPath:
+ *         poster_path:
  *           type: string
  *           nullable: true
  *           description: 海報圖片路徑
  *           example: "/9TXzaOhPy1ub2OfzdyQJ0V5IEY7.jpg"
- *         releaseDate:
+ *         release_date:
  *           type: string
  *           format: date
  *           description: 上映日期
@@ -87,9 +87,9 @@
  *       required:
  *         - id
  *         - title
- *         - originalTitle
- *         - posterPath
- *         - releaseDate
+ *         - original_title
+ *         - poster_path
+ *         - release_date
  *       properties:
  *         id:
  *           type: integer
@@ -99,16 +99,16 @@
  *           type: string
  *           description: 電影標題（國語）
  *           example: "蜘蛛人：無家日"
- *         originalTitle:
+ *         original_title:
  *           type: string
  *           description: 原始標題
  *           example: "Spider-Man: No Way Home"
- *         posterPath:
+ *         poster_path:
  *           type: string
  *           nullable: true
  *           description: 海報圖片路徑
  *           example: "/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg"
- *         releaseDate:
+ *         release_date:
  *           type: string
  *           format: date
  *           description: 上映日期
@@ -309,21 +309,21 @@
  *     RatingResponse:
  *       type: object
  *       required:
- *         - movieId
+ *         - movie_id
  *         - score
- *         - averageScore
- *         - totalVotes
+ *         - average_score
+ *         - total_votes
  *       properties:
- *         movieId:
+ *         movie_id:
  *           type: integer
  *           example: 634649
  *         score:
  *           type: integer
  *           example: 8
- *         averageScore:
+ *         average_score:
  *           type: number
  *           example: 8.5
- *         totalVotes:
+ *         total_votes:
  *           type: integer
  *           example: 1000
 */

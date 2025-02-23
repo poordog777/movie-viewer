@@ -16,9 +16,9 @@ describe('Google OAuth 回調測試', () => {
     id: 1,
     email: 'test@example.com',
     name: 'Test User',
-    googleId: 'google-123',
-    createdAt: new Date(),
-    updatedAt: new Date()
+    google_id: 'google-123',
+    created_at: new Date(),
+    updated_at: new Date()
   };
 
   const mockToken = 'mock-jwt-token';
