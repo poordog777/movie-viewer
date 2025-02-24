@@ -8,7 +8,8 @@ import {
   Button,
   Paper,
   Skeleton,
-  Alert
+  Alert,
+  Snackbar
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -34,24 +35,49 @@ const MovieInfo = styled(Paper)`
 const Movie: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userRating, setUserRating] = useState<number | null>(null);
   const [ratingLoading, setRatingLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // 加載電影詳情
   useEffect(() => {
     const fetchMovie = async () => {
       if (!id) return;
 
+      // 如果未登入，先保存當前頁面URL
+      if (!isAuthenticated) {
+        sessionStorage.setItem('redirectUrl', window.location.pathname);
+      }
+
       setLoading(true);
       setError(null);
       try {
+        // 檢查是否有有效的 token
+        const token = localStorage.getItem('token');
+        console.log('Current token:', token);
+        console.log('Auth status:', isAuthenticated);
+
         const data = await moviesAPI.getDetail(id);
+        console.log('Movie detail data:', data);
+        console.log('Movie detail:', data);
+        console.log('User votes:', data.user_votes);
         setMovie(data);
-        setUserRating(data.userRating || null);
+        
+        // 如果用戶已登入，從 user_votes 中獲取評分
+        if (isAuthenticated && user && user.id && data.user_votes) {
+          const rating = data.user_votes[user.id];
+          console.log('Current user:', user.id);
+          console.log('User rating:', rating);
+          setUserRating(rating ?? null);
+        } else {
+          console.log('No user rating found');
+          setUserRating(null);
+        }
       } catch (error) {
         console.error('Failed to load movie:', error);
         setError('無法載入電影資訊');
@@ -61,7 +87,7 @@ const Movie: React.FC = () => {
     };
 
     fetchMovie();
-  }, [id]);
+  }, [id, isAuthenticated, user]);
 
   // 提交評分
   const handleRate = useCallback(async (value: number | null) => {
@@ -70,21 +96,30 @@ const Movie: React.FC = () => {
     setRatingLoading(true);
     try {
       const response = await moviesAPI.rateMovie(id, value);
+      const isFirstRating = !movie?.user_votes?.[user?.id || ''];
+      
       setUserRating(response.score);
       if (movie) {
         setMovie({
           ...movie,
-          voteAverage: response.averageScore,
-          userRating: response.score
+          vote_average: response.average_score,
+          user_votes: {
+            ...movie.user_votes,
+            [user?.id || '']: response.score
+          }
         });
       }
+      
+      // 設置成功訊息
+      setSuccessMessage(isFirstRating ? '評分成功' : '修改評分成功');
+      setSnackbarOpen(true);
     } catch (error) {
       console.error('Rating failed:', error);
       setError('評分失敗，請稍後再試');
     } finally {
       setRatingLoading(false);
     }
-  }, [id, movie, ratingLoading]);
+  }, [id, movie, ratingLoading, user]);
 
   if (loading) {
     return (
@@ -130,7 +165,13 @@ const Movie: React.FC = () => {
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
           <PosterImage
-            src={getPosterUrl(movie.posterPath, 'large')}
+            src={(() => {
+              console.log('Movie data:', movie);
+              console.log('Poster path:', movie.poster_path);
+              const url = getPosterUrl(movie.poster_path, 'large');
+              console.log('Generated poster URL:', url);
+              return url;
+            })()}
             alt={movie.title}
           />
         </Grid>
@@ -154,7 +195,7 @@ const Movie: React.FC = () => {
 
             <Box sx={{ mb: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                上映日期：{new Date(movie.releaseDate).toLocaleDateString()}
+                上映日期：{new Date(movie.release_date).toLocaleDateString()}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 片長：{movie.runtime} 分鐘
@@ -164,36 +205,52 @@ const Movie: React.FC = () => {
               </Typography>
             </Box>
 
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                平均評分：{movie.voteAverage.toFixed(1)} / 10
-              </Typography>
-              <Rating
-                value={movie.voteAverage / 2}
-                readOnly
-                precision={0.5}
-              />
-              <Typography variant="body2" color="text.secondary">
-                ({movie.voteCount} 票)
-              </Typography>
-            </Box>
-
-            {isAuthenticated && (
-              <Box sx={{ mt: 4 }}>
+            {typeof movie.vote_average === 'number' && (
+              <Box sx={{ mt: 3 }}>
                 <Typography variant="subtitle1" gutterBottom>
-                  我的評分
+                  平均評分：{movie.vote_average.toFixed(1)} / 10
                 </Typography>
                 <Rating
-                  value={userRating}
-                  onChange={(_, value) => handleRate(value)}
-                  disabled={ratingLoading}
-                  max={10}
+                  value={movie.vote_average / 2}
+                  readOnly
+                  precision={0.5}
                 />
+                <Typography variant="body2" color="text.secondary">
+                  ({movie.vote_count} 票)
+                </Typography>
               </Box>
             )}
+
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                我的評分
+              </Typography>
+              <Rating
+                value={userRating}
+                onChange={(_, value) => {
+                  if (!isAuthenticated) {
+                    // 保存當前頁面 URL
+                    sessionStorage.setItem('redirectUrl', window.location.pathname);
+                    setSuccessMessage('請先登入會員');
+                    setSnackbarOpen(true);
+                    return;
+                  }
+                  handleRate(value);
+                }}
+                disabled={ratingLoading}
+                max={10}
+              />
+            </Box>
           </MovieInfo>
         </Grid>
       </Grid>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        message={successMessage}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </PageContainer>
   );
 };

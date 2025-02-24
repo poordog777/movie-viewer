@@ -33,6 +33,7 @@ passport.use(new JwtStrategy(
           id: true,
           email: true,
           name: true,
+          picture: true,
           google_id: true,
           created_at: true,
           updated_at: true
@@ -73,17 +74,43 @@ passport.use(
         // 使用 transaction 來處理並發問題
         const result = await prisma.$transaction(async (tx) => {
           const existingUser = await tx.user.findUnique({
-            where: { google_id: profile.id }
+            where: { google_id: profile.id },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              picture: true,
+              google_id: true,
+              created_at: true,
+              updated_at: true
+            }
           });
 
           if (existingUser) {
-            return existingUser;
+            // 更新現有用戶資料
+            return await tx.user.update({
+              where: { id: existingUser.id },
+              data: {
+                name: profile.displayName || existingUser.name,
+                picture: profile.photos?.[0]?.value,
+              },
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                picture: true,
+                google_id: true,
+                created_at: true,
+                updated_at: true
+              }
+            });
           }
 
           return await tx.user.create({
             data: {
               email,
               name: profile.displayName || 'Unknown',
+              picture: profile.photos?.[0]?.value,
               google_id: profile.id,
             }
           });

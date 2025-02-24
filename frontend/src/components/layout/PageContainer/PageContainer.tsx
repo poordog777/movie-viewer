@@ -1,6 +1,5 @@
-import { Container, Box } from '@mui/material';
+import { Container } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import Header from '../Header/Header';
 
 interface PageContainerProps {
   children: React.ReactNode;
@@ -21,14 +20,11 @@ const PageContainer: React.FC<PageContainerProps> = ({
   maxWidth = 'lg'
 }) => {
   return (
-    <>
-      <Header />
-      <Main>
-        <Container maxWidth={maxWidth}>
-          {children}
-        </Container>
-      </Main>
-    </>
+    <Main>
+      <Container maxWidth={maxWidth}>
+        {children}
+      </Container>
+    </Main>
   );
 };
 

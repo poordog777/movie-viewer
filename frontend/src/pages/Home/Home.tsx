@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { Typography } from '@mui/material';
+import { useState, useCallback, useEffect } from 'react';
+import { Typography, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import PageContainer from '../../components/layout/PageContainer/PageContainer';
 import MovieGrid from '../../components/movie/MovieGrid/MovieGrid';
@@ -9,26 +9,31 @@ import { moviesAPI } from '../../api/movies';
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const [movies, setMovies] = useState<Movie[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadMovies = useCallback(async () => {
-    if (loading || !hasMore) return;
+  useEffect(() => {
+    const loadMovies = async () => {
+      try {
+        setError(null);
+        const response = await moviesAPI.getPopular();
+        if (response?.results) {
+          console.log('Loaded movies:', response.results);
+          setMovies(response.results);
+        } else {
+          console.error('No results in response:', response);
+          setError('無法載入電影資料');
+        }
+      } catch (error) {
+        console.error('Failed to load movies:', error);
+        setError('載入電影資料時發生錯誤');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setLoading(true);
-    try {
-      const response = await moviesAPI.getPopular(page);
-      setMovies(prev => [...prev, ...response.results]);
-      setHasMore(response.page < response.total_pages);
-      setPage(prev => prev + 1);
-    } catch (error) {
-      console.error('Failed to load movies:', error);
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [loading, hasMore, page]);
+    loadMovies();
+  }, []);
 
   const handleMovieClick = useCallback((movieId: number) => {
     navigate(`/movie/${movieId}`);
@@ -39,11 +44,14 @@ const Home: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         熱門電影
       </Typography>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
       <MovieGrid
         movies={movies}
         loading={loading}
-        hasMore={hasMore}
-        onLoadMore={loadMovies}
         onMovieClick={handleMovieClick}
       />
     </PageContainer>

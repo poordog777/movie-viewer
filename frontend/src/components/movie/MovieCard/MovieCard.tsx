@@ -1,7 +1,7 @@
-import { Card, CardMedia, CardContent, Typography, Rating } from '@mui/material';
+import { Card, CardMedia, CardContent, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { Movie } from '../../../types/movie';
-import { getPosterUrl } from '../../../api/config';
+import { TMDB_IMAGE_BASE_URL, POSTER_SIZES } from '../../../api/config';
 
 interface MovieCardProps {
   movie: Movie;
@@ -30,6 +30,17 @@ const StyledCard = styled(Card)`
     display: flex;
     flex-direction: column;
     gap: ${({ theme }) => theme.spacing(1)};
+    padding: ${({ theme }) => theme.spacing(2)};
+  }
+
+  .movie-info {
+    display: flex;
+    flex-direction: column;
+    gap: ${({ theme }) => theme.spacing(0.5)};
+  }
+
+  .rating-container {
+    margin-top: ${({ theme }) => theme.spacing(1)};
   }
 `;
 
@@ -47,29 +58,36 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
     onClick?.(movie.id);
   };
 
+  // 構建圖片 URL
+  const posterUrl = movie.poster_path
+    ? `${TMDB_IMAGE_BASE_URL}/${POSTER_SIZES.medium}${
+        movie.poster_path.startsWith('/') ? movie.poster_path : `/${movie.poster_path}`
+      }`
+    : 'https://via.placeholder.com/342x513?text=No+Image';
+
   return (
     <StyledCard onClick={handleClick}>
       <CardMedia
         component="img"
-        image={getPosterUrl(movie.posterPath)}
+        image={posterUrl}
         alt={movie.title}
       />
       <CardContent>
-        <MovieTitle variant="subtitle1">
-          {movie.title}
-        </MovieTitle>
-        <Typography variant="body2" color="text.secondary">
-          {new Date(movie.releaseDate).getFullYear()}
-        </Typography>
-        <Rating
-          value={movie.voteAverage / 2}
-          precision={0.5}
-          readOnly
-          size="small"
-        />
-        <Typography variant="caption" color="text.secondary">
-          {movie.voteAverage.toFixed(1)} / 10
-        </Typography>
+        <div className="movie-info">
+          <MovieTitle variant="subtitle1">
+            {movie.title}
+          </MovieTitle>
+          {movie.original_title && movie.original_title !== movie.title && (
+            <Typography variant="body2" color="text.secondary">
+              {movie.original_title}
+            </Typography>
+          )}
+          {movie.release_date && (
+            <Typography variant="body2" color="text.secondary">
+              {new Date(movie.release_date).toLocaleDateString('zh-TW')}
+            </Typography>
+          )}
+        </div>
       </CardContent>
     </StyledCard>
   );

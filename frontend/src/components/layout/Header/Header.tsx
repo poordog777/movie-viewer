@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import SearchInput from '../../common/SearchInput/SearchInput';
 import { useState } from 'react';
+import { routes, API_BASE_URL } from '../../../api/config';
 
 const StyledAppBar = styled(AppBar)`
   background-color: ${({ theme }) => theme.palette.background.paper};
@@ -43,8 +44,16 @@ const Header: React.FC = () => {
   };
 
   const handleLogin = () => {
+    // 保存當前頁面 URL
+    const currentPath = window.location.pathname;
+    sessionStorage.setItem('redirectUrl', currentPath);
+    
     // 重定向到 Google 登入頁面
-    window.location.href = `${process.env.REACT_APP_API_URL}/auth/google`;
+    const callbackUrl = `${window.location.origin}/auth/callback/google`;
+    const state = window.location.pathname;
+    
+    // 將重定向 URL 和當前路徑傳給後端
+    window.location.href = `${API_BASE_URL}${routes.auth.google}?redirect_uri=${encodeURIComponent(callbackUrl)}&return_to=${encodeURIComponent(state)}`;
   };
 
   const handleLogoClick = () => {

@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Typography } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import PageContainer from '../../components/layout/PageContainer/PageContainer';
-import MovieGrid from '../../components/movie/MovieGrid/MovieGrid';
+import MovieGridWithPagination from '../../components/movie/MovieGridWithPagination/MovieGridWithPagination';
 import SearchInput from '../../components/common/SearchInput/SearchInput';
 import { Movie } from '../../types/movie';
 import { moviesAPI } from '../../api/movies';
@@ -70,13 +70,6 @@ const Search: React.FC = () => {
 
   return (
     <PageContainer>
-      <SearchInput
-        value={query}
-        onChange={setQuery}
-        onSearch={handleSearch}
-        placeholder="搜尋電影..."
-      />
-      
       {query.trim() && (
         <Typography variant="h5" gutterBottom>
           搜尋結果: {query}
@@ -84,7 +77,7 @@ const Search: React.FC = () => {
       )}
 
       {movies.length > 0 ? (
-        <MovieGrid
+        <MovieGridWithPagination
           movies={movies}
           loading={loading}
           hasMore={hasMore}

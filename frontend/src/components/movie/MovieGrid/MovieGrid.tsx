@@ -1,45 +1,54 @@
-import { Grid } from '@mui/material';
+import { CircularProgress, Box } from '@mui/material';
+import Grid from '@mui/material/Grid2';
 import { styled } from '@mui/material/styles';
 import { Movie } from '../../../types/movie';
 import MovieCard from '../MovieCard/MovieCard';
-import InfiniteScroll from '../../common/InfiniteScroll/InfiniteScroll';
 
 interface MovieGridProps {
   movies: Movie[];
   loading: boolean;
-  hasMore: boolean;
-  onLoadMore: () => void;
   onMovieClick?: (movieId: number) => void;
 }
 
-const GridContainer = styled(Grid)`
+const StyledGrid = styled(Grid)`
   padding: ${({ theme }) => theme.spacing(2, 0)};
+  width: 100%;
+`;
+
+const LoadingContainer = styled(Box)`
+  display: flex;
+  justify-content: center;
+  padding: ${({ theme }) => theme.spacing(3)};
 `;
 
 const MovieGrid: React.FC<MovieGridProps> = ({
-  movies,
+  movies = [],
   loading,
-  hasMore,
-  onLoadMore,
   onMovieClick
 }) => {
+  if (loading) {
+    return (
+      <LoadingContainer>
+        <CircularProgress />
+      </LoadingContainer>
+    );
+  }
+
+  if (!movies?.length) {
+    return null;
+  }
+
   return (
-    <InfiniteScroll
-      loading={loading}
-      hasMore={hasMore}
-      onLoadMore={onLoadMore}
-    >
-      <GridContainer container spacing={2}>
-        {movies.map((movie) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={movie.id}>
-            <MovieCard
-              movie={movie}
-              onClick={onMovieClick}
-            />
-          </Grid>
-        ))}
-      </GridContainer>
-    </InfiniteScroll>
+    <StyledGrid container spacing={2}>
+      {movies.map((movie) => (
+        <Grid size={{ xs: 12, sm: 6, md: 3, lg: 2.4 }} key={movie.id}>
+          <MovieCard
+            movie={movie}
+            onClick={onMovieClick}
+          />
+        </Grid>
+      ))}
+    </StyledGrid>
   );
 };
 
