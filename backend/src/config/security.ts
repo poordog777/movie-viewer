@@ -3,6 +3,9 @@ import { Express } from 'express';
 import rateLimit from 'express-rate-limit';
 
 export const setupSecurity = (app: Express) => {
+
+  app.set('trust proxy', true);
+
   // 設置基本安全頭
   app.use(helmet());
   
