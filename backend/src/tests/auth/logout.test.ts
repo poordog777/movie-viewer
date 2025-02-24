@@ -13,6 +13,7 @@ describe('認證測試', () => {
       id: 1,
       email: 'test@example.com',
       name: 'Test User',
+      picture: null,
       google_id: 'test-google-id-123',
       created_at: new Date(),
       updated_at: new Date()
