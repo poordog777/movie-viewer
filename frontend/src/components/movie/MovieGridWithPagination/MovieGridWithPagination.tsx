@@ -1,4 +1,4 @@
-import Grid from '@mui/material/Grid2';
+import { Grid } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { Movie } from '../../../types/movie';
 import MovieCard from '../MovieCard/MovieCard';
@@ -36,7 +36,7 @@ const MovieGridWithPagination: React.FC<MovieGridWithPaginationProps> = ({
     >
       <StyledGrid container spacing={2}>
         {movies.map((movie) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3, lg: 2.4 }} key={movie.id}>
+          <Grid item xs={12} sm={6} md={3} lg={2.4} key={movie.id}>
             <MovieCard
               movie={movie}
               onClick={onMovieClick}
