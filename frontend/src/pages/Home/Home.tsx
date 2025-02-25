@@ -36,7 +36,7 @@ const Home: React.FC = () => {
   }, []);
 
   const handleMovieClick = useCallback((movieId: number) => {
-    navigate(`/movie/${movieId}`);
+    navigate(`/movies/${movieId}`);
   }, [navigate]);
 
   return (

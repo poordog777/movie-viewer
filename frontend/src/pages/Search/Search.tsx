@@ -39,7 +39,7 @@ const Search: React.FC = () => {
 
   // 處理電影卡片點擊
   const handleMovieClick = useCallback((movieId: number) => {
-    navigate(`/movie/${movieId}`);
+    navigate(`/movies/${movieId}`);
   }, [navigate]);
 
   // 從 URL 參數加載初始搜尋

@@ -86,26 +86,25 @@ router.get('/google', (req: Request, res: Response, next) => {
  *                       example: Google 登入成功
  */
 router.get('/google/callback', (req: Request, res: Response, next) => {
+  // 獲取原始頁面路徑
+  let returnPath = '/';
+  if (req.query.state) {
+    try {
+      returnPath = Buffer.from(req.query.state as string, 'base64').toString();
+      console.log('Decoded return path:', returnPath);
+    } catch (error) {
+      console.error('Failed to decode return path:', error);
+    }
+  }
+
+  // 構建基礎回調URL
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+  const callbackUrl = new URL(`${frontendUrl}/auth/callback/google`);
+
   // 檢查是否有錯誤（例如用戶取消登入）
   if (req.query.error) {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-    
-    // 從state解析重定向路徑
-    let redirectPath = '/';
-    if (req.query.state) {
-      try {
-        redirectPath = Buffer.from(req.query.state as string, 'base64').toString();
-        console.log('Error case: decoded redirect path:', redirectPath);
-      } catch (error) {
-        console.error('Error case: failed to decode redirect path:', error);
-      }
-    }
-    
-    // 構建完整的回調URL
-    const callbackUrl = new URL(`${frontendUrl}/auth/callback/google`);
     callbackUrl.searchParams.append('error', req.query.error as string);
-    callbackUrl.searchParams.append('redirect', redirectPath);
-    
+    callbackUrl.searchParams.append('redirect', returnPath);
     console.log('Error case: redirecting to:', callbackUrl.toString());
     return res.redirect(callbackUrl.toString());
   }
@@ -113,8 +112,9 @@ router.get('/google/callback', (req: Request, res: Response, next) => {
   // 如果沒有錯誤，繼續 Passport 認證
   passport.authenticate('google', { session: false }, (err, user) => {
     if (err || !user) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-      return res.redirect(frontendUrl);
+      callbackUrl.searchParams.append('error', 'authentication_failed');
+      callbackUrl.searchParams.append('redirect', returnPath);
+      return res.redirect(callbackUrl.toString());
     }
     
     const token = generateToken({
@@ -122,38 +122,21 @@ router.get('/google/callback', (req: Request, res: Response, next) => {
       email: user.email
     });
 
-    // 1. 構建認證回調基礎URL
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-    const callbackUrl = new URL(`${frontendUrl}/auth/callback/google`);
-
-    // 2. 設置認證參數
+    // 設置回調參數
     const authParams = new URLSearchParams({
       token,
       userId: user.id.toString(),
       name: user.name,
       email: user.email,
-      picture: user.picture || ''
+      picture: user.picture || '',
+      redirect: returnPath
     });
 
-    // 3. 從state解析重定向路徑
-    let redirectPath = '/';
-    if (req.query.state) {
-      try {
-        redirectPath = Buffer.from(req.query.state as string, 'base64').toString();
-        console.log('Decoded redirect path:', redirectPath);
-      } catch (error) {
-        console.error('Failed to decode redirect path:', error);
-      }
-    }
-
-    // 4. 添加重定向路徑
-    authParams.append('redirect', redirectPath);
-
-    // 5. 設置最終URL
+    // 設置最終URL
     callbackUrl.search = authParams.toString();
-    console.log('Final redirect URL:', callbackUrl.toString());
+    console.log('Success case: redirecting to:', callbackUrl.toString());
 
-    // 6. 執行重定向
+    // 執行重定向
     res.redirect(callbackUrl.toString());
   })(req, res, next);
 });

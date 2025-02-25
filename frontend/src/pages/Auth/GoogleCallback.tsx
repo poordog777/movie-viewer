@@ -30,67 +30,48 @@ const GoogleCallback = () => {
       const urlParams = new URLSearchParams(window.location.search);
       console.log('Raw URL params:', Object.fromEntries(urlParams.entries()));
 
-      // 1. 檢查是否有錯誤
+      // 獲取重定向URL（無論成功或失敗都會使用）
+      const redirectUrl = urlParams.get('redirect') || '/';
+      console.log('Return URL:', redirectUrl);
+
+      // 處理錯誤情況
       const error = urlParams.get('error');
       if (error) {
         console.log('Login error from OAuth:', error);
-        // 即使登入失敗也要嘗試使用 redirect 參數
-        const redirectUrl = urlParams.get('redirect') || '/';
-        console.log('Error case: redirecting to:', redirectUrl);
-        return navigate(redirectUrl);
+        return navigate(redirectUrl, { replace: true });
       }
 
-      // 2. 解析回調參數
-      const token = urlParams.get('token');
-      const userId = urlParams.get('userId');
-      const name = urlParams.get('name');
-      const email = urlParams.get('email');
-      const picture = urlParams.get('picture');
-
       try {
-        if (token && userId && name && email) {
-          console.log('Starting login process with:', { token, userId, name, email });
-          
-          // 3. 執行登入
-          await login({
-            token,
-            user: {
-              id: userId,
-              name,
-              email,
-              picture: picture || undefined
-            }
-          });
+        // 解析並驗證必要參數
+        const token = urlParams.get('token');
+        const userId = urlParams.get('userId');
+        const name = urlParams.get('name');
+        const email = urlParams.get('email');
+        const picture = urlParams.get('picture');
 
-          // 4. 驗證登入狀態
-          const storedToken = localStorage.getItem('token');
-          const storedUser = localStorage.getItem('user');
-          console.log('Stored auth state:', { hasToken: !!storedToken, hasUser: !!storedUser });
-
-          if (!storedToken || !storedUser) {
-            throw new Error('Login failed - auth data not stored');
-          }
-
-          // 5. 確保狀態更新
-          await new Promise(resolve => setTimeout(resolve, 500));
-
-          // 6. 處理重定向
-          const redirectFromUrl = urlParams.get('redirect');
-          const redirectFromSession = sessionStorage.getItem('redirectUrl');
-          const redirectUrl = redirectFromUrl || redirectFromSession || '/';
-          
-          console.log('Redirect URL from URL params:', redirectFromUrl);
-          console.log('Redirect URL from session:', redirectFromSession);
-          console.log('Final redirect URL:', redirectUrl);
-
-          sessionStorage.removeItem('redirectUrl');
-          navigate(redirectUrl);
-        } else {
+        if (!token || !userId || !name || !email) {
           throw new Error('Missing required login data');
         }
+
+        // 執行登入
+        await login({
+          token,
+          user: {
+            id: userId,
+            name,
+            email,
+            picture: picture || undefined
+          }
+        });
+
+        // 等待狀態更新
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // 返回原始頁面
+        navigate(redirectUrl, { replace: true });
       } catch (error) {
         console.error('Login error:', error);
-        navigate('/');
+        navigate(redirectUrl, { replace: true });
       }
     };
 

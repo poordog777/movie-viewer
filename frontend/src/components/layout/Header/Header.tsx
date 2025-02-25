@@ -44,16 +44,13 @@ const Header: React.FC = () => {
   };
 
   const handleLogin = () => {
-    // 保存當前頁面 URL
+    // 將當前路徑作為 state 傳遞
+    // 添加 api/v1 前綴到重定向路徑
     const currentPath = window.location.pathname;
-    sessionStorage.setItem('redirectUrl', currentPath);
+    const callbackUrl = `${window.location.origin}/auth/callback/google`;
     
     // 重定向到 Google 登入頁面
-    const callbackUrl = `${window.location.origin}/auth/callback/google`;
-    const state = window.location.pathname;
-    
-    // 將重定向 URL 和當前路徑傳給後端
-    window.location.href = `${API_BASE_URL}${routes.auth.google}?redirect_uri=${encodeURIComponent(callbackUrl)}&return_to=${encodeURIComponent(state)}`;
+    window.location.href = `${API_BASE_URL}/api/v1${routes.auth.google}?redirect_uri=${encodeURIComponent(callbackUrl)}&return_to=${encodeURIComponent(currentPath)}`;
   };
 
   const handleLogoClick = () => {

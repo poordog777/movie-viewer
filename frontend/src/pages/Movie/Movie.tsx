@@ -49,45 +49,50 @@ const Movie: React.FC = () => {
     const fetchMovie = async () => {
       if (!id) return;
 
-      // 如果未登入，先保存當前頁面URL
-      if (!isAuthenticated) {
-        sessionStorage.setItem('redirectUrl', window.location.pathname);
-      }
-
       setLoading(true);
       setError(null);
       try {
-        // 檢查是否有有效的 token
-        const token = localStorage.getItem('token');
-        console.log('Current token:', token);
-        console.log('Auth status:', isAuthenticated);
-
         const data = await moviesAPI.getDetail(id);
-        console.log('Movie detail data:', data);
-        console.log('Movie detail:', data);
-        console.log('User votes:', data.user_votes);
-        setMovie(data);
         
-        // 如果用戶已登入，從 user_votes 中獲取評分
-        if (isAuthenticated && user && user.id && data.user_votes) {
-          const rating = data.user_votes[user.id];
-          console.log('Current user:', user.id);
-          console.log('User rating:', rating);
-          setUserRating(rating ?? null);
-        } else {
-          console.log('No user rating found');
-          setUserRating(null);
+        // 如果響應成功但沒有數據，保持當前電影數據不變
+        if (!data && movie) {
+          return;
+        }
+        
+        if (data) {
+          console.log('Movie detail data:', data);
+          setMovie(data);
+          
+          // 更新用戶評分
+          if (isAuthenticated && user?.id && data.user_votes) {
+            const rating = data.user_votes[user.id];
+            setUserRating(rating ?? null);
+          }
         }
       } catch (error) {
         console.error('Failed to load movie:', error);
-        setError('無法載入電影資訊');
+        // 如果已經有電影數據，不顯示錯誤
+        if (!movie) {
+          setError('無法載入電影資訊');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchMovie();
-  }, [id, isAuthenticated, user]);
+  }, [id]); // 只依賴 movieId
+
+  // 處理用戶評分更新
+  useEffect(() => {
+    if (!movie || !isAuthenticated || !user?.id) {
+      setUserRating(null);
+      return;
+    }
+
+    const rating = movie.user_votes?.[user.id];
+    setUserRating(rating ?? null);
+  }, [isAuthenticated, user, movie]);
 
   // 提交評分
   const handleRate = useCallback(async (value: number | null) => {
