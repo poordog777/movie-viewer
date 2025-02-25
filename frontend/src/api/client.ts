@@ -1,9 +1,17 @@
 import axios from 'axios';
 import { API_BASE_URL } from './config';
 
+// 調試日誌
+console.log('API Base URL:', API_BASE_URL);
+console.log('Full Base URL:', `${API_BASE_URL}/api/v1`);
+
 // 創建 axios 實例
+// 構建完整的base URL
+const fullBaseUrl = `${API_BASE_URL}/api/v1`.replace(/([^:]\/)\/+/g, "$1");
+console.log('Sanitized Base URL:', fullBaseUrl);
+
 const apiClient = axios.create({
-  baseURL: `${API_BASE_URL}/api/v1`,
+  baseURL: fullBaseUrl,
   headers: {
     'Content-Type': 'application/json'
   },
