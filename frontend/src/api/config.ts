@@ -15,14 +15,14 @@ export const getPosterUrl = (path: string | null, size: keyof typeof POSTER_SIZE
 
 export const routes = {
   auth: {
-    google: '/api/v1/auth/google',
-    logout: '/api/v1/auth/logout',
-    callback: '/api/v1/auth/google/callback'
+    google: '/auth/google',
+    logout: '/auth/logout',
+    callback: '/auth/google/callback'
   },
   movies: {
-    popular: '/api/v1/movies/popular',
-    search: '/api/v1/movies/search',
-    detail: (id: number | string) => `/api/v1/movies/${id}`,
-    rate: (id: number | string) => `/api/v1/movies/${id}/rating`
+    popular: '/movies/popular',
+    search: '/movies/search',
+    detail: (id: number | string) => `/movies/${id}`,
+    rate: (id: number | string) => `/movies/${id}/rating`
   }
 } as const;

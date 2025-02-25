@@ -3,10 +3,11 @@ import { API_BASE_URL } from './config';
 
 // 創建 axios 實例
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${API_BASE_URL}/api/v1`,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  withCredentials: true
 });
 
 // 請求攔截器

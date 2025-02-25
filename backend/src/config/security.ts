@@ -1,10 +1,21 @@
 import helmet from 'helmet';
 import { Express } from 'express';
 import rateLimit from 'express-rate-limit';
+import cors from 'cors';
 
 export const setupSecurity = (app: Express) => {
 
   app.set('trust proxy', 1);
+
+  // 設置 CORS
+  app.use(cors({
+    origin: [
+      'http://localhost:3001',
+      'https://movie-viewer-topaz.vercel.app',
+      /\.vercel\.app$/  // 允許所有 vercel.app 子域名
+    ],
+    credentials: true
+  }));
 
   // 設置基本安全頭
   app.use(helmet());
@@ -27,7 +38,13 @@ export const setupSecurity = (app: Express) => {
         scriptSrc: ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "https://api.themoviedb.org"]
+        connectSrc: [
+          "'self'",
+          "https://api.themoviedb.org",
+          "http://localhost:3001",
+          "https://movie-viewer-topaz.vercel.app",
+          "https://*.vercel.app"
+        ]
       }
     })
   );
