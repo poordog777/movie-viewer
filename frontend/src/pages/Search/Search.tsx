@@ -3,25 +3,17 @@ import { Typography } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import PageContainer from '../../components/layout/PageContainer/PageContainer';
 import MovieGridWithPagination from '../../components/movie/MovieGridWithPagination/MovieGridWithPagination';
-import SearchInput from '../../components/common/SearchInput/SearchInput';
 import { Movie } from '../../types/movie';
 import { moviesAPI } from '../../api/movies';
 
 const Search: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('query') || '');
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
-
-  // 重置搜尋結果
-  const resetSearch = useCallback(() => {
-    setMovies([]);
-    setHasMore(true);
-    setPage(1);
-  }, []);
 
   // 搜尋電影
   const searchMovies = useCallback(async (searchQuery: string, currentPage: number) => {
@@ -44,15 +36,6 @@ const Search: React.FC = () => {
       setLoading(false);
     }
   }, []);
-
-  // 處理搜尋提交
-  const handleSearch = useCallback(() => {
-    if (query.trim()) {
-      setSearchParams({ query: query.trim() });
-      resetSearch();
-      searchMovies(query.trim(), 1);
-    }
-  }, [query, setSearchParams, resetSearch, searchMovies]);
 
   // 處理電影卡片點擊
   const handleMovieClick = useCallback((movieId: number) => {
