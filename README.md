@@ -2,6 +2,9 @@
 
 Movie Viewer 是一個現代化的電影評論平台，整合第三方 TMDB API 提供最新電影資訊，使用者可以透過 Google 帳號快速登入，瀏覽電影資訊並進行評分。
 
+網站：
+🌐 [https://movie-viewer-p3gmduot3-jacks-projects-1fd523c7.vercel.app/](https://movie-viewer-p3gmduot3-jacks-projects-1fd523c7.vercel.app/)
+
 ## 功能特點
 - 整合 TMDB API 即時電影資訊
 - Google 帳號快速登入
@@ -74,7 +77,6 @@ Movie Viewer 是一個現代化的電影評論平台，整合第三方 TMDB API 
   * Sinon（測試替身：mock、stub、spy）
 
 ### 部署環境 (Deployment)
-- GitHub Actions（CI/CD）
 - Vercel（前端部署）
 - Railway（後端部署）
 

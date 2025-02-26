@@ -226,7 +226,6 @@ sequenceDiagram
    - 資料庫索引：
      * movies 表：release_date、popularity、title 索引
    - 本地快取策略：
-     * Popular API：檢查最高人氣電影的快取時間，每3小時更新一次
+     * Popular API：檢查最高人氣電影的快取時間，若超過 3 小時則向 TMDB 取得最新資料
      * Movie Details API：僅在資料庫無該電影時調用 TMDB API
-   - API 響應壓縮：減少傳輸大小
    - 錯誤處理完善：明確的錯誤代碼和提示訊息
