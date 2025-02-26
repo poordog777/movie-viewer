@@ -1,3 +1,5 @@
+![alt text](電影首頁.png)
+
 # Movie Viewer
 
 Movie Viewer 是一個現代化的電影評論平台，整合第三方 TMDB API 提供最新電影資訊，使用者可以透過 Google 帳號快速登入，瀏覽電影資訊並進行評分。
