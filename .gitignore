@@ -152,3 +152,6 @@ dist
 # 系統文件
 .DS_Store
 Thumbs.db
+
+# 文檔
+test-plan.md

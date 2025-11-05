@@ -68,7 +68,13 @@ const Search: React.FC = () => {
           onMovieClick={handleMovieClick}
         />
       ) : !loading && query.trim() && (
-        <Typography variant="body1" color="text.secondary" textAlign="center" py={4}>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          textAlign="center"
+          py={4}
+          data-testid="no-results"
+        >
           找不到相關電影
         </Typography>
       )}

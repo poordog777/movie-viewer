@@ -53,6 +53,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
       <SearchContainer elevation={focused ? 3 : 1}>
         <SearchIcon color="action" />
         <StyledInput
+          data-testid="search-input"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
@@ -64,7 +65,11 @@ const SearchInput: React.FC<SearchInputProps> = ({
             <ClearIcon />
           </IconButton>
         )}
-        <IconButton type="submit" disabled={!value.trim()}>
+        <IconButton
+          type="submit"
+          disabled={!value.trim()}
+          data-testid="search-btn"
+        >
           <SearchIcon />
         </IconButton>
       </SearchContainer>

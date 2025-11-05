@@ -66,7 +66,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
     : 'https://via.placeholder.com/342x513?text=No+Image';
 
   return (
-    <StyledCard onClick={handleClick}>
+    <StyledCard onClick={handleClick} data-testid="movie-card">
       <CardMedia
         component="img"
         image={posterUrl}
@@ -74,7 +74,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
       />
       <CardContent>
         <div className="movie-info">
-          <MovieTitle variant="subtitle1">
+          <MovieTitle variant="subtitle1" data-testid="movie-title">
             {movie.title}
           </MovieTitle>
           {movie.original_title && movie.original_title !== movie.title && (
