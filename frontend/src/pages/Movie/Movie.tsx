@@ -231,6 +231,7 @@ const Movie: React.FC = () => {
                 我的評分
               </Typography>
               <Rating
+                data-testid="rating-input"
                 value={userRating}
                 onChange={(_, value) => {
                   if (!isAuthenticated) {
@@ -245,6 +246,11 @@ const Movie: React.FC = () => {
                 disabled={ratingLoading}
                 max={10}
               />
+              {userRating && (
+                <Typography data-testid="current-rating" variant="body2" color="text.secondary">
+                  目前評分：{userRating} / 10
+                </Typography>
+              )}
             </Box>
           </MovieInfo>
         </Grid>

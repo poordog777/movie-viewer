@@ -74,7 +74,7 @@ const Header: React.FC = () => {
         </SearchBox>
 
         {isAuthenticated ? (
-          <UserBox>
+          <UserBox data-testid="user-menu">
             <Avatar
               src={user?.picture}
               alt={user?.name}
@@ -84,6 +84,7 @@ const Header: React.FC = () => {
               variant="outlined"
               color="primary"
               onClick={logout}
+              data-testid="logout-button"
             >
               登出
             </Button>
@@ -93,6 +94,7 @@ const Header: React.FC = () => {
             variant="contained"
             color="primary"
             onClick={handleLogin}
+            data-testid="login-button"
           >
             登入
           </Button>

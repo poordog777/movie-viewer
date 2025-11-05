@@ -9,16 +9,16 @@ interface MovieGridProps {
   onMovieClick?: (movieId: number) => void;
 }
 
-const StyledGrid = styled(Grid)`
-  padding: ${({ theme }) => theme.spacing(2, 0)};
-  width: 100%;
-`;
+const StyledGrid = styled(Grid)(({ theme }) => ({
+  padding: theme.spacing(2, 0),
+  width: '100%'
+}));
 
-const LoadingContainer = styled(Box)`
-  display: flex;
-  justify-content: center;
-  padding: ${({ theme }) => theme.spacing(3)};
-`;
+const LoadingContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'center',
+  padding: theme.spacing(3)
+}));
 
 const MovieGrid: React.FC<MovieGridProps> = ({
   movies = [],
@@ -27,7 +27,7 @@ const MovieGrid: React.FC<MovieGridProps> = ({
 }) => {
   if (loading) {
     return (
-      <LoadingContainer>
+      <LoadingContainer data-testid="loading-indicator">
         <CircularProgress />
       </LoadingContainer>
     );
@@ -38,7 +38,7 @@ const MovieGrid: React.FC<MovieGridProps> = ({
   }
 
   return (
-    <StyledGrid container spacing={2}>
+    <StyledGrid container spacing={2} data-testid="movie-grid">
       {movies.map((movie) => (
         <Grid item xs={12} sm={6} md={3} lg={2.4} key={movie.id}>
           <MovieCard
